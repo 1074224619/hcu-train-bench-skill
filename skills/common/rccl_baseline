@@ -1,0 +1,10 @@
+8 all_reduce 1
+8 all_gather 1
+8 broadcast 1
+8 reduce 1
+8 reduce_scatter 1
+8 gather 1
+8 scatter 1
+8 alltoall 1
+8 alltoallv 1
+8 sendrecv 1
