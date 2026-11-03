@@ -1,0 +1,15 @@
+[submodule "frameworks/Megatron-bridge-das"]
+	path = frameworks/Megatron-bridge-das
+	url = git@github.com:1074224619/Megatron-bridge-das.git
+[submodule "frameworks/dcu-train-cookbook"]
+	path = frameworks/dcu-train-cookbook
+	url = http://42.228.13.241:10068/dcutoolkit/deeplearing/dcu-train-cookbook.git
+[submodule "frameworks/ms-swift"]
+	path = frameworks/ms-swift
+	url = https://github.com/modelscope/ms-swift.git
+[submodule "frameworks/cluster-manager-das"]
+	path = frameworks/cluster-manager-das
+	url = git@github.com:1074224619/cluster-manager-das.git
+[submodule "frameworks/Megatron-LM-das"]
+	path = frameworks/Megatron-LM-das
+	url = git@github.com:1074224619/Megatron-LM-das.git
