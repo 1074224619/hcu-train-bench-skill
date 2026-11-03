@@ -54,22 +54,22 @@ BenchAgent/
 
 不用另记：调用本身会写日志的脚本（`prepare_nodes.sh`、各 `scripts/*.py`）不要重复记；向用户汇报时读 `bench_log.md` 不用记。
 
-怎么记：
+怎么记（命令假定在项目根目录下执行，`K`/`S`/`R` 换成绝对路径也一样）：
 
 ```bash
-L="python3 /public/home/wangxj3/Projects/BenchAgent/skills/common/benchlog.py"
-S=/public/home/wangxj3/Projects/BenchAgent/runs/site.json
+L="python3 skills/common/benchlog.py"
+S=runs/site.json
 
 # 执行命令：用 exec 包一层，自动写前后两条，按退出码记成功/失败并自动诊断；命令的退出码原样返回
 $L exec --site $S --target "核对 qwen3 数据路径（bw67）" --plan "run_qwen.sh 里 DATA_PATH 写死，确认 .bin/.idx 存在" \
-    -- 'ssh bw67 ls /public/home/wangxj3/Downloads/datasets/qwen3_text_document.{bin,idx}'
+    -- 'ssh bw67 ls /path/to/datasets/qwen3_text_document.{bin,idx}'
 
 # 不是命令的操作（用编辑工具改文件、读日志排查、记录用户决定）：手动写 begin、note 两条
 T0=$(date +%s)
-$L begin --site $S --target "改 site.json 的 container.mounts" --plan "集群禁止挂载 /public/Users/，改成允许的子目录"
+$L begin --site $S --target "改 site.json 的 container.mounts" --plan "集群禁止挂载 /data/，改成允许的子目录"
 #   ……做操作……
 $L note --site $S --target "改 site.json 的 container.mounts" --since $T0 --status 成功 \
-    --result "改为 /public/home/wangxj3/:/public/home/wangxj3/" [--issue '对象|问题|处理方案'] --detail $S
+    --result "改为 /data/:/data/" [--issue '对象|问题|处理方案'] --detail $S
 ```
 
 要求：

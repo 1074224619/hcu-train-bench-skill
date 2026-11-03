@@ -20,14 +20,14 @@ skills/hcu-run-model/
 
 - 节点 ssh 免密可达，`hcu-bench` 容器已在节点上运行（`docker ps` 能看到）。
 - 节点卡空闲。
-- 框架目录、数据集、模型在容器里路径相同（容器挂载了 `/public/home/wangxj3/`）。
+- 框架目录、数据集、模型在容器里路径相同（容器挂载了 site.json `container.mounts` 里配的数据/模型目录）。
 
 ## 调试流程（每个模型按这个顺序，出问题就停下来报告）
 
 **AI 自己的操作也要写日志**：执行命令用 `benchlog.py exec`（自动写前后两条），改文件、排查、按用户决定处理等非命令操作用 `begin` + `note`，执行前后各一条；写法见主 skill `skills/SKILL.md`「AI 操作也要写日志」。下面每一步都要记，第 1、2 步是 AI 手动做的，最容易漏：
 
 ```bash
-L="python3 /public/home/wangxj3/Projects/BenchAgent/skills/common/benchlog.py"; S=/public/home/wangxj3/Projects/BenchAgent/runs/site.json
+L="python3 skills/common/benchlog.py"; S=runs/site.json
 T0=$(date +%s); $L begin --site $S --target "读 qwen3 run_qwen.sh / train_qwen3_8B.sh" --plan "找数据集、tokenizer、端口、env 脚本"
 $L note --site $S --target "读 qwen3 run_qwen.sh / train_qwen3_8B.sh" --since $T0 --status 成功 \
     --result "DATA_PATH=… 可用 --env 覆盖（见各框架一节）" --result "mpirun 端口 11451，容器 sshd 25901，不一致" --issue 'run_qwen.sh|端口不一致|多节点前和用户确认怎么改'
@@ -44,13 +44,15 @@ $L exec --site $S --target "核对 qwen3 数据/tokenizer（bw67）" --plan "确
 
 ## 命令
 
+以下命令假定在项目根目录下执行（`R`/`F` 换成绝对路径也一样）：
+
 ```bash
-R=/public/home/wangxj3/Projects/BenchAgent/skills/hcu-run-model/scripts/run_model.py
-F=/public/home/wangxj3/Projects/BenchAgent/frameworks
+R=skills/hcu-run-model/scripts/run_model.py
+F=frameworks
 
 python3 $R --hosts bw67 --launcher <launcher 绝对路径> --arg ... --env KEY=VAL ... \
     [--max-iters 20] [--warmup 5] [--timeout-min 60] [--container hcu-bench] [--dry-run] \
-    --site /public/home/wangxj3/Projects/BenchAgent/runs/site.json
+    --site runs/site.json
 ```
 
 - 在 `--hosts` 第一个节点上 `ssh + docker exec <容器>` 启动 launcher，launcher 自己的 mpirun 负责其他节点。
@@ -72,7 +74,7 @@ python3 $R --hosts bw67 --launcher <launcher 绝对路径> --arg ... --env KEY=V
 | 选模型 | 大部分 launcher 用 `TRAIN_SCRIPT=${TRAIN_SCRIPT:-默认}`，可 `--env TRAIN_SCRIPT=train_qwen3_8B.sh` |
 | 数据集 | launcher 里 `DATA_PATH="${DATA_PATH:-默认}"`，和 `TRAIN_SCRIPT` 一样可用 `--env DATA_PATH=...` 覆盖；只有 qwen3 带默认值（oscar-en-10k qwen3 前缀），其他族默认是空字符串——这些用 hcu-test-plan 时由 `site.json` 的 `models.<model>.data_path` 自动注入（见 hcu-test-plan/SKILL.md「数据集/模型路径」），单独调试本 skill 时要自己 `--env DATA_PATH=...` 传 |
 | tokenizer | launcher 里 `TOKENIZER_MODEL_PATH="${TOKENIZER_MODEL_PATH:-默认}"`，同上可 `--env` 覆盖或走 `site.json` 的 `models.<model>.tokenizer_path`；qwen3 默认都用 `qwen3-30b-a3b` |
-| DTK_ENV / NCCL_ENV | 同样是 `${VAR:-默认}`，默认值各 launcher 不一定一致。**除 qwen3/run_qwen.sh 外，其余所有 launcher 的 DTK_ENV 默认值都是空字符串**（`${DTK_ENV:-}`），`source ${DTK_ENV}` 会因为缺文件名直接报 `source: filename argument required` 退出，必须显式传 `--env DTK_ENV=/opt/dtk/env.sh`。**NCCL_ENV 必须显式覆盖成 site.json 的 `env_script`（`skills/common/env.sh`），不能用框架自带 `requirements/env.sh` 的默认值**：后者在本集群下会让 PyTorch 的 NCCL 初始化（`torch.distributed.barrier()`）报 `ncclInternalError: ... Attribute arch of node cpu not found`，即便单机 rccl-tests 基线刚测过是 PASS 的（根因和排查过程见 QA.md 3.2）。单独调试本 skill 时要自己 `--env DTK_ENV=/opt/dtk/env.sh --env NCCL_ENV=/public/home/wangxj3/Projects/BenchAgent/skills/common/env.sh` 传；走 hcu-test-plan/`build_matrix.py` 生成测试列表时两者都已经自动注入，不用手传 |
+| DTK_ENV / NCCL_ENV | 同样是 `${VAR:-默认}`，默认值各 launcher 不一定一致。**除 qwen3/run_qwen.sh 外，其余所有 launcher 的 DTK_ENV 默认值都是空字符串**（`${DTK_ENV:-}`），`source ${DTK_ENV}` 会因为缺文件名直接报 `source: filename argument required` 退出，必须显式传 `--env DTK_ENV=/opt/dtk/env.sh`。**NCCL_ENV 必须显式覆盖成 site.json 的 `env_script`（`skills/common/env.sh`），不能用框架自带 `requirements/env.sh` 的默认值**：后者在本集群下会让 PyTorch 的 NCCL 初始化（`torch.distributed.barrier()`）报 `ncclInternalError: ... Attribute arch of node cpu not found`，即便单机 rccl-tests 基线刚测过是 PASS 的（根因和排查过程见 QA.md 3.2）。单独调试本 skill 时要自己 `--env DTK_ENV=/opt/dtk/env.sh --env NCCL_ENV=skills/common/env.sh` 传；走 hcu-test-plan/`build_matrix.py` 生成测试列表时两者都已经自动注入，不用手传 |
 | 端口 | qwen3 `run_qwen.sh` 的 mpirun 用 `plm_rsh_args '-p 11451'`，其他 launcher 没写（走 22）；容器 sshd 端口是 25901，**多节点前要核对** |
 | 日志 | launcher 自己还会 tee 一份 `log-<N>nodes-<时间>.log` 到 example 目录 |
 | 并行 | `TP/PP/EP/CP/MBS/GBS/SEQ_LEN` 写在 train 脚本开头 |
@@ -80,7 +82,7 @@ python3 $R --hosts bw67 --launcher <launcher 绝对路径> --arg ... --env KEY=V
 ```bash
 python3 $R --hosts bw67 --launcher $F/Megatron-LM-das/examples/qwen3/run_qwen.sh \
     --arg '{hostfile}' --arg '{nodes}' --env TRAIN_SCRIPT=train_qwen3_8B.sh \
-    --env NCCL_ENV=/public/home/wangxj3/Projects/BenchAgent/skills/common/env.sh --max-iters 10
+    --env NCCL_ENV=skills/common/env.sh --max-iters 10
 ```
 
 ### Megatron-bridge-das
@@ -100,7 +102,7 @@ python3 $R --hosts bw67 --launcher $F/Megatron-LM-das/examples/qwen3/run_qwen.sh
 # 先 dryrun，再 train
 python3 $R --hosts bw67 --launcher $F/Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh \
     --arg qwen35_text_9b_pretrain_8gpu_bw1000_bf16_config --arg dryrun \
-    --env LOCAL_HF_PATH=/public/home/wangxj3/Downloads/modules/qwen3.5/qwen3.5-9b
+    --env LOCAL_HF_PATH=/path/to/modules/qwen3.5/qwen3.5-9b
 ```
 
 ### ms-swift
@@ -131,11 +133,11 @@ ms-swift 目前**不能直接跑**：上面三处写死路径要用户先决定�
 
 ## 批量执行（测试列表）
 
-单个模型调通后，按 hcu-test-plan 生成的测试列表批量跑：
+单个模型调通后，按 hcu-test-plan 生成的测试列表批量跑（命令假定在项目根目录下执行）：
 
 ```bash
-B=/public/home/wangxj3/Projects/BenchAgent/skills/hcu-run-model/scripts/run_cases.py
-R=/public/home/wangxj3/Projects/BenchAgent/runs
+B=skills/hcu-run-model/scripts/run_cases.py
+R=runs
 python3 $B $R/<run_id> --dry-run          # 打印每个用例的命令
 python3 $B $R/<run_id>                    # 全部 wave
 python3 $B $R/<run_id> --wave 1

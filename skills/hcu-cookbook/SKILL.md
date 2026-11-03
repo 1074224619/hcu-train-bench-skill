@@ -6,9 +6,11 @@ when_to_use: 跑完测试要汇总性能、重新解析已有日志，或把结�
 
 # hcu-cookbook（步骤 4）
 
+以下命令假定在项目根目录下执行（`K`/`R` 换成绝对路径也一样）：
+
 ```bash
-K=/public/home/wangxj3/Projects/BenchAgent/skills/hcu-cookbook
-R=/public/home/wangxj3/Projects/BenchAgent/runs
+K=skills/hcu-cookbook
+R=runs
 ```
 
 ## 解析
@@ -39,8 +41,8 @@ python3 $K/scripts/export_cookbook.py $R/<run_id> --apply      # 写入 cookbook
 **AI 自己的操作也要写日志**：执行命令用 `benchlog.py exec`（自动写前后两条），改文件、排查等非命令操作用 `begin` + `note`，执行前后各一条；写法见主 skill `skills/SKILL.md`「AI 操作也要写日志」。
 
 ```bash
-X="python3 /public/home/wangxj3/Projects/BenchAgent/skills/common/benchlog.py exec --site $R/site.json --run-dir $R/<run_id>"
-C="cd /public/home/wangxj3/Projects/BenchAgent/frameworks/dcu-train-cookbook &&"
+X="python3 skills/common/benchlog.py exec --site $R/site.json --run-dir $R/<run_id>"
+C="cd frameworks/dcu-train-cookbook &&"
 $X --target "cookbook git diff" --plan "汇总改动给用户看，不做提交" -- "$C git diff --stat && git diff"
 ```
 

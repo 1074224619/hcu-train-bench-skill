@@ -6,15 +6,17 @@ when_to_use: 要知道有哪些模型/框架能测、每个用例占几张卡，
 
 # hcu-test-plan（步骤 2）
 
+以下命令假定在项目根目录下执行（`K`/`R` 换成绝对路径也一样）：
+
 ```bash
-K=/public/home/wangxj3/Projects/BenchAgent/skills/hcu-test-plan
-R=/public/home/wangxj3/Projects/BenchAgent/runs
+K=skills/hcu-test-plan
+R=runs
 ```
 
 ## 扫描用例
 
 ```bash
-python3 $K/scripts/scan_examples.py /public/home/wangxj3/Projects/BenchAgent/frameworks -o $K/catalog.json --site $R/site.json
+python3 $K/scripts/scan_examples.py frameworks -o $K/catalog.json --site $R/site.json
 ```
 
 `catalog.json` 每个用例：id、框架、model、stage、launcher 和参数/环境变量、节点数、并行参数、mbs/gbs/seq_len、cookbook_doc、enabled、notes。扫描后人工审一遍：

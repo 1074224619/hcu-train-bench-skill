@@ -60,7 +60,7 @@ BenchAgent/
 ## 配置（首次）
 
 ```bash
-cd /public/home/wangxj3/Projects/BenchAgent
+cd /path/to/BenchAgent     # 项目根目录
 cp skills/common/site.example.json runs/site.json
 vi runs/site.json        # 镜像、容器名、ssh 端口、挂载、平台、每节点卡数、env_script、框架和 cookbook 路径
 vi runs/hostfile.all     # 每行一个节点名

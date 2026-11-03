@@ -1,6 +1,4 @@
 # These variables should not be modified.
-# CURRENT_DIR="$( cd "$( dirname "$0" )" && pwd )"
-# MEGATRON_PATH=$( dirname $( dirname ${CURRENT_DIR}))
 export PYTHONWARNINGS=ignore
 export TOKENIZERS_PARALLELISM=false
 export TORCH_CPP_LOG_LEVEL=fatal
@@ -13,7 +11,11 @@ export NCCL_NET_GDR_LEVEL=4
 export NCCL_NET_GDR_READ=1
 export RCCL_SDMA_COPY_ENABLE=0
 
-export PYTHONPATH=/path/BenchAgent/frameworks/Megatron-LM-das/3rdparty/Megatron-LM:$PYTHONPATH
+# Project root computed from this file's own location (skills/common/env.sh),
+# so this works regardless of where the project is checked out.
+_env_sh_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+export PYTHONPATH=${_env_sh_root}/frameworks/Megatron-LM-das/3rdparty/Megatron-LM:$PYTHONPATH
+unset _env_sh_root
 export TRITON_HOME=/tmp
 
 # These variables should be modified according to the environment of the machine you are using.

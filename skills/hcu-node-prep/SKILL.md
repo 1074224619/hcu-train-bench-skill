@@ -6,9 +6,11 @@ when_to_use: 筛节点、看哪些节点空闲/被谁占用、建或查测试容
 
 # hcu-node-prep（步骤 1）
 
+以下命令假定在项目根目录下执行（`P`/`R` 换成绝对路径也一样）：
+
 ```bash
-P="bash /public/home/wangxj3/Projects/BenchAgent/skills/hcu-node-prep/scripts/prepare_nodes.sh /public/home/wangxj3/Projects/BenchAgent/runs/site.json"
-R=/public/home/wangxj3/Projects/BenchAgent/runs
+P="bash skills/hcu-node-prep/scripts/prepare_nodes.sh runs/site.json"
+R=runs
 ```
 
 | 步骤 | 命令 | 读 | 写 |
@@ -40,7 +42,7 @@ rccl 还要读 site.json 的 `rccl_baseline`（np=8 的 busbw 性能基线文件
   ```bash
   # 不要：$P healthy <check目录> <rccl目录>
   # 只传 rccl：
-  $P healthy /public/home/wangxj3/Projects/BenchAgent/runs/envcheck/per-node-container_rccl_stages_<时间戳>_<id>
+  $P healthy $R/envcheck/per-node-container_rccl_stages_<时间戳>_<id>
   ```
 - 这样进了 `healthy_hosts` 的节点里，凡是 `check` 之前报过 FAIL 的，后面测试计划/跑模型阶段**只给它排单机（1 节点）的用例**，不要编进任何多机（≥2 节点）的测试组或训练任务——多机用例仍然必须排除这些节点，等网络/运维侧修好 RoCE/RDMA 链路、`check` 重跑也过了再放开。
 - 如果 `check` 和 `rccl` 都过，才是真正不受限的多机可用节点，正常把两个目录都传给 `$P healthy`。
@@ -62,7 +64,7 @@ rccl 还要读 site.json 的 `rccl_baseline`（np=8 的 busbw 性能基线文件
 
 - **AI 自己的操作也要写日志**：执行命令用 `benchlog.py exec`（自动写前后两条），改文件、排查、按用户决定处理等非命令操作用 `begin` + `note`，执行前后各一条；写法见主 skill `skills/SKILL.md`「AI 操作也要写日志」。本步常见的 AI 操作：手动 ssh 复核节点、`ps -fp <PID>` 查占用、`ssh-keygen -R`、改 `hostfile.all` / `site.json`、经同意后释放卡。
   ```bash
-  python3 /public/home/wangxj3/Projects/BenchAgent/skills/common/benchlog.py exec --site $R/site.json --target "查 bw67 卡占用" --plan "screen 报宿主机进程占用，确认归属" -- 'ssh bw67 ps -fp 4172449'
+  python3 skills/common/benchlog.py exec --site $R/site.json --target "查 bw67 卡占用" --plan "screen 报宿主机进程占用，确认归属" -- 'ssh bw67 ps -fp 4172449'
   ```
 - 出错先看 `bench_log.md` 最新一条和明细日志，不要盲目重试。
 - ssh 不通：报告节点和原始报错，建议 `ssh-copy-id` 或找管理员。
