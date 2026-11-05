@@ -40,7 +40,21 @@ def inject_model_paths(c, site):
     Every megatron-lm case also gets DTK_ENV forced to /opt/dtk/env.sh: every
     launcher except qwen3's run_qwen.sh defaults DTK_ENV to an empty string
     (`${DTK_ENV:-}`), so `source ${DTK_ENV}` fails with "source: filename
-    argument required" and the job never starts (confirmed on llama2_13b)."""
+    argument required" and the job never starts (confirmed on llama2_13b).
+
+    Every megatron-lm case also gets SSH_PORT forced to site.json's
+    container.ssh_port: the launchers' mpirun call uses plm_rsh_args to ssh into
+    other nodes to spawn ranks, and the container sshd isn't on the default port
+    22, so multi-node cases without this env would hang on connection
+    refused/timeout (see QA.md).
+
+    Every megatron-bridge case also gets BRIDGE_ENV_SCRIPT forced to site.json's
+    env_script: Megatron-bridge-das's own env/env.sh points PYTHONPATH at its
+    nested 3rdparty/Megatron-Bridge/3rdparty/Megatron-LM, which is an empty
+    checkout in this environment (no .git/.gitmodules either); site.json's
+    env_script (skills/common/env.sh) reuses the already-populated
+    Megatron-LM-das copy instead and does the same HCU recipe registration cp
+    step, so both frameworks share one env script (see QA.md 6.3)."""
     if c["framework"] == "megatron-lm" and site.get("env_script"):
         env = dict(c.get("env", {}))
         env["NCCL_ENV"] = site["env_script"]
@@ -48,6 +62,14 @@ def inject_model_paths(c, site):
     if c["framework"] == "megatron-lm":
         env = dict(c.get("env", {}))
         env.setdefault("DTK_ENV", "/opt/dtk/env.sh")
+        c = dict(c, env=env)
+    if c["framework"] == "megatron-lm" and site.get("container", {}).get("ssh_port"):
+        env = dict(c.get("env", {}))
+        env["SSH_PORT"] = str(site["container"]["ssh_port"])
+        c = dict(c, env=env)
+    if c["framework"] == "megatron-bridge" and site.get("env_script"):
+        env = dict(c.get("env", {}))
+        env["BRIDGE_ENV_SCRIPT"] = site["env_script"]
         c = dict(c, env=env)
 
     preset = site.get("models", {}).get(c.get("model"), {})
@@ -177,6 +199,23 @@ def build(a, site, run_dir, st):
         for c, slice_ in wave:
             c.update(wave=w, hosts=slice_, gpus=c["nodes"] * gpn)
             cases.append(c)
+
+    # Every megatron-lm launcher's run_*.sh hardcodes its own default PORT/
+    # MASTER_PORT (e.g. qwen1.5/qwen2/llama2/llama3/GLM all default to 25900,
+    # mixtral/gpt3/aibenchmark/deepseek_v3 to 25905), so two cases from the
+    # same family scheduled in the same wave (different nodes, run
+    # concurrently) bind the same port and one gets EADDRINUSE while the other
+    # can hang (confirmed on runs/20261104-141152 wave 5: qwen1.5_32b vs
+    # qwen25_32b). Give every case its own port, globally unique across the
+    # whole matrix (not just within a wave) so this can't recur even if wave
+    # packing changes.
+    for i, c in enumerate(cases):
+        if c["framework"] == "megatron-lm":
+            port = str(28000 + i)
+            env = dict(c.get("env", {}))
+            env["PORT"] = port
+            env["MASTER_PORT"] = port
+            c["env"] = env
 
     matrix = {
         "meta": {"run_id": run_dir.name, "site": str(abspath_literal(a.site)), "catalog": str(abspath_literal(a.catalog)),

@@ -45,8 +45,8 @@ BenchAgent/
 |---|---|
 | Megatron-LM-das | git@github.com:1074224619/Megatron-LM-das.git |
 | Megatron-bridge-das | git@github.com:1074224619/Megatron-bridge-das.git |
-| ms-swift | https://github.com/modelscope/ms-swift.git |
-| cluster-manager-das | https://github.com/zhaoyu111111/cluster-manager-das.git |
+| ms-swift | git@github.com:1074224619/ms-swift-das.git |
+| cluster-manager-das | git@github.com:1074224619/cluster-manager-das.git |
 | dcu-train-cookbook | http://42.228.13.241:10068/dcutoolkit/deeplearing/dcu-train-cookbook.git |
 
 新环境下 clone 到 `frameworks/` 下对应的目录名即可。

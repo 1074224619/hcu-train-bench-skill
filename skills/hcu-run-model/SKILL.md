@@ -75,14 +75,14 @@ python3 $R --hosts bw67 --launcher <launcher 绝对路径> --arg ... --env KEY=V
 | 数据集 | launcher 里 `DATA_PATH="${DATA_PATH:-默认}"`，和 `TRAIN_SCRIPT` 一样可用 `--env DATA_PATH=...` 覆盖；只有 qwen3 带默认值（oscar-en-10k qwen3 前缀），其他族默认是空字符串——这些用 hcu-test-plan 时由 `site.json` 的 `models.<model>.data_path` 自动注入（见 hcu-test-plan/SKILL.md「数据集/模型路径」），单独调试本 skill 时要自己 `--env DATA_PATH=...` 传 |
 | tokenizer | launcher 里 `TOKENIZER_MODEL_PATH="${TOKENIZER_MODEL_PATH:-默认}"`，同上可 `--env` 覆盖或走 `site.json` 的 `models.<model>.tokenizer_path`；qwen3 默认都用 `qwen3-30b-a3b` |
 | DTK_ENV / NCCL_ENV | 同样是 `${VAR:-默认}`，默认值各 launcher 不一定一致。**除 qwen3/run_qwen.sh 外，其余所有 launcher 的 DTK_ENV 默认值都是空字符串**（`${DTK_ENV:-}`），`source ${DTK_ENV}` 会因为缺文件名直接报 `source: filename argument required` 退出，必须显式传 `--env DTK_ENV=/opt/dtk/env.sh`。**NCCL_ENV 必须显式覆盖成 site.json 的 `env_script`（`skills/common/env.sh`），不能用框架自带 `requirements/env.sh` 的默认值**：后者在本集群下会让 PyTorch 的 NCCL 初始化（`torch.distributed.barrier()`）报 `ncclInternalError: ... Attribute arch of node cpu not found`，即便单机 rccl-tests 基线刚测过是 PASS 的（根因和排查过程见 QA.md 3.2）。单独调试本 skill 时要自己 `--env DTK_ENV=/opt/dtk/env.sh --env NCCL_ENV=skills/common/env.sh` 传；走 hcu-test-plan/`build_matrix.py` 生成测试列表时两者都已经自动注入，不用手传 |
-| 端口 | qwen3 `run_qwen.sh` 的 mpirun 用 `plm_rsh_args '-p 11451'`，其他 launcher 没写（走 22）；容器 sshd 端口是 25901，**多节点前要核对** |
+| 端口 | mpirun 跨机用 `plm_rsh_args '-p ${SSH_PORT}'` ssh 到其他节点拉起进程，`SSH_PORT` 是 `${SSH_PORT:-}`（留空走 mpirun 默认 22）；**必须覆盖成 site.json 的 `container.ssh_port`**，否则多机会卡在连接超时/被拒（`root@<node>: Permission denied`）。单独调试本 skill 要自己 `--env SSH_PORT=<container.ssh_port>` 传；走 `build_matrix.py` 时已自动注入，不用手传（2026-11-04 之前所有 launcher 要么没传这个参数、要么写死 `-p 11451`，和容器实际 sshd 端口不一致，已统一改成 `SSH_PORT` 变量，见 QA.md） |
 | 日志 | launcher 自己还会 tee 一份 `log-<N>nodes-<时间>.log` 到 example 目录 |
 | 并行 | `TP/PP/EP/CP/MBS/GBS/SEQ_LEN` 写在 train 脚本开头 |
 
 ```bash
 python3 $R --hosts bw67 --launcher $F/Megatron-LM-das/examples/qwen3/run_qwen.sh \
     --arg '{hostfile}' --arg '{nodes}' --env TRAIN_SCRIPT=train_qwen3_8B.sh \
-    --env NCCL_ENV=skills/common/env.sh --max-iters 10
+    --env NCCL_ENV=skills/common/env.sh --env SSH_PORT=25951 --max-iters 10
 ```
 
 ### Megatron-bridge-das

@@ -15,8 +15,24 @@ export RCCL_SDMA_COPY_ENABLE=0
 # so this works regardless of where the project is checked out.
 _env_sh_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 export PYTHONPATH=${_env_sh_root}/frameworks/Megatron-LM-das/3rdparty/Megatron-LM:$PYTHONPATH
-unset _env_sh_root
 export TRITON_HOME=/tmp
+
+# Megatron-bridge-das support (BRIDGE_ENV_SCRIPT=<this file>): its own nested
+# 3rdparty/Megatron-Bridge/3rdparty/Megatron-LM submodule checkout is empty in this environment
+# (no .git/.gitmodules either, so `git submodule update --init` doesn't apply -- see QA.md 6.3),
+# so PYTHONPATH reuses the Megatron-LM-das copy above instead of that empty one; also add
+# Megatron-bridge-das's own src dirs and run its HCU recipe registration step (same cp
+# Megatron-bridge-das/env/env.sh does). Guarded by existence so this whole block is a no-op when
+# only Megatron-LM-das is in use.
+_bridge_root=${_env_sh_root}/frameworks/Megatron-bridge-das
+if [ -d "${_bridge_root}" ]; then
+  export PYTHONPATH=${_bridge_root}/hcu_megatron_bridge/src:${_bridge_root}/3rdparty/Megatron-Bridge/src:${PYTHONPATH}
+  _bridge_recipes_init=${_bridge_root}/hcu_megatron_bridge/src/hcu_megatron/bridge/recipes/__init__.py
+  _bridge_recipes_dir=${_bridge_root}/3rdparty/Megatron-Bridge/src/megatron/bridge/recipes
+  [ -f "${_bridge_recipes_init}" ] && [ -d "${_bridge_recipes_dir}" ] && cp "${_bridge_recipes_init}" "${_bridge_recipes_dir}"
+  unset _bridge_recipes_init _bridge_recipes_dir
+fi
+unset _env_sh_root _bridge_root
 
 # These variables should be modified according to the environment of the machine you are using.
 # Auto-detect the IB HCA family and pick the matching profile. Force a specific
