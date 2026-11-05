@@ -113,18 +113,36 @@ case "$IB_TYPE" in
     # export ROCSHMEM_ALLOWED_IBV_DEVICES=mlx5_2,mlx5_3,mlx5_4,mlx5_5,mlx5_6,mlx5_7,mlx5_8,mlx5_9
     ;;
   shca)
-    export NCCL_IB_HCA=shca_0:1,shca_1:1,shca_2:1,shca_3:1
+    # Same auto-detect approach as mlnx above: ask `ibstatus` which shca ports are
+    # actually ACTIVE + LinkUp and build NCCL_IB_HCA from only those (verified
+    # ibstatus reports shca devices in the same format as mlx5 ones). Force a
+    # specific value by exporting NCCL_IB_HCA before sourcing this file.
+    if [ -z "${NCCL_IB_HCA:-}" ]; then
+      _detected_hca=""
+      if command -v ibstatus >/dev/null 2>&1; then
+        _detected_hca=$(ibstatus 2>/dev/null | tr -d "'" | awk '
+          /^Infiniband device/ { dev=$3; port=$5 }
+          /^[ \t]*state:/      { active = ($0 ~ /ACTIVE/) }
+          /^[ \t]*phys state:/ { if (active && $0 ~ /LinkUp/) { if (out != "") out = out ","; out = out dev ":" port } }
+          END { print out }
+        ')
+      fi
+      if [ -n "${_detected_hca}" ]; then
+        NCCL_IB_HCA=${_detected_hca}
+      else
+        NCCL_IB_HCA=shca_0:1,shca_1:1,shca_2:1,shca_3:1
+        echo "[env.sh] warning: ibstatus unavailable or found no ACTIVE+LinkUp shca port; falling back to hardcoded NCCL_IB_HCA=${NCCL_IB_HCA}" >&2
+      fi
+      unset _detected_hca
+    fi
+    export NCCL_IB_HCA
+    export NCCL_PXN_DISABLE=0
     export NCCL_PLUGIN_P2P=ib
-    export NCCL_NET_PLUGIN=/opt/rccl-rdma-sharp-plugins/lib/librccl-net-shca.so
-    export NCCL_TOPO_FILE=/usr/local/built-in-508-topo-input-tj-default.xml
+    export NCCL_NET_PLUGIN=shca
     export RCCL_PXN_GPU_BALANCE=1
-    # Per-machine tuning (e.g. 508-shca); enable as needed:
-    export RCCL_NET_PLANE="shca_0,shca_3|shca_1,shca_2"
     export SHCA_DEBUG_MASK=0
     export SHCA_CMR_LOG_LEVEL=1
-    export SHCA_SHUT_UP_FWB=0
     export UCX_IB_NUM_PATHS=1
-    export RCCL_P2P_XHCL_CHANNEL_NUM=30
     ;;
   *)
     echo "[env.sh] error: unknown IB_TYPE='$IB_TYPE' (expected mlnx or shca)" >&2
