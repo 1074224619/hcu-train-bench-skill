@@ -1,5 +1,5 @@
 {
-  "frameworks_root": "/public/home/wangxj3/Projects/BenchAgent/frameworks",
+  "frameworks_root": "/path/to/hcu-train-bench-skill/frameworks",
   "gpus_per_node": 8,
   "cases": [
     {
@@ -367,7 +367,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Llama.md",
       "notes": [
@@ -398,7 +398,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 512,
+      "gbs": 128,
       "seq_len": 4096,
       "cookbook_doc": "Llama.md",
       "notes": [
@@ -491,7 +491,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 512,
+      "gbs": 256,
       "seq_len": 4096,
       "cookbook_doc": "Llama.md",
       "notes": [
@@ -522,7 +522,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Llama.md",
       "notes": [
@@ -584,7 +584,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 128,
       "seq_len": 4096,
       "cookbook_doc": null,
       "notes": [
@@ -606,16 +606,16 @@
         "TRAIN_SCRIPT": "train_qwen1.5_14B.sh"
       },
       "nodes": 1,
-      "min_world": 8,
+      "min_world": 4,
       "parallel": {
         "tp": 2,
-        "pp": 4,
+        "pp": 2,
         "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-1.5.md",
       "notes": [
@@ -646,7 +646,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-1.5.md",
       "notes": [
@@ -670,14 +670,14 @@
       "nodes": 1,
       "min_world": 2,
       "parallel": {
-        "tp": 2,
-        "pp": 1,
+        "tp": 1,
+        "pp": 2,
         "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-1.5.md",
       "notes": [
@@ -708,7 +708,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -739,7 +739,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -761,16 +761,16 @@
         "TRAIN_SCRIPT": "train_qwen25_14B.sh"
       },
       "nodes": 1,
-      "min_world": 8,
+      "min_world": 4,
       "parallel": {
         "tp": 2,
-        "pp": 4,
+        "pp": 2,
         "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -801,7 +801,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -832,7 +832,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -857,14 +857,14 @@
       "min_world": 32,
       "parallel": {
         "tp": 4,
-        "pp": 4,
-        "cp": 2,
+        "pp": 8,
+        "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
       "gbs": 128,
-      "seq_len": 8192,
+      "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
         "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
@@ -887,14 +887,14 @@
       "nodes": 1,
       "min_world": 2,
       "parallel": {
-        "tp": 2,
-        "pp": 1,
+        "tp": 1,
+        "pp": 2,
         "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -925,7 +925,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -956,7 +956,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -981,14 +981,14 @@
       "min_world": 32,
       "parallel": {
         "tp": 4,
-        "pp": 4,
-        "cp": 2,
+        "pp": 8,
+        "cp": 1,
         "ep": 1,
         "etp": 1
       },
       "mbs": 1,
       "gbs": 128,
-      "seq_len": 8192,
+      "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
         "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
@@ -1018,7 +1018,7 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-2.md",
       "notes": [
@@ -1027,7 +1027,7 @@
     },
     {
       "id": "lm-qwen3_0.6b-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_0.6b",
       "stage": "pretrain",
@@ -1049,14 +1049,16 @@
         "etp": 1
       },
       "mbs": 1,
-      "gbs": 256,
+      "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_1.7b-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_1.7b",
       "stage": "pretrain",
@@ -1081,11 +1083,13 @@
       "gbs": 32,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_14b-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_14b",
       "stage": "pretrain",
@@ -1110,11 +1114,13 @@
       "gbs": 32,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_235b-pretrain-128g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_235b",
       "stage": "pretrain",
@@ -1139,11 +1145,13 @@
       "gbs": 128,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
-      "id": "lm-qwen3_30b_a3b-pretrain-16g",
-      "enabled": true,
+      "id": "lm-qwen3_30b_a3b-pretrain-32g",
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_30b_a3b",
       "stage": "pretrain",
@@ -1155,11 +1163,11 @@
       "env": {
         "TRAIN_SCRIPT": "train_qwen3_30B_A3B.sh"
       },
-      "nodes": 2,
-      "min_world": 16,
+      "nodes": 4,
+      "min_world": 32,
       "parallel": {
         "tp": 1,
-        "pp": 2,
+        "pp": 4,
         "cp": 1,
         "ep": 8,
         "etp": 1
@@ -1168,11 +1176,13 @@
       "gbs": 64,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_30b_a3b_ultraep-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_30b_a3b_ultraep",
       "stage": "pretrain",
@@ -1197,11 +1207,13 @@
       "gbs": 32,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_32b-pretrain-16g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_32b",
       "stage": "pretrain",
@@ -1224,13 +1236,15 @@
       },
       "mbs": 1,
       "gbs": 64,
-      "seq_len": 8192,
+      "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_4b-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_4b",
       "stage": "pretrain",
@@ -1255,11 +1269,13 @@
       "gbs": 32,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "lm-qwen3_8b-pretrain-8g",
-      "enabled": true,
+      "enabled": false,
       "framework": "megatron-lm",
       "model": "qwen3_8b",
       "stage": "pretrain",
@@ -1284,11 +1300,13 @@
       "gbs": 32,
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.md",
-      "notes": []
+      "notes": [
+        "需在 site.json 的 models.<model> 或 run_qwen.sh 中设置 DATA_PATH/TOKENIZER_MODEL_PATH"
+      ]
     },
     {
       "id": "bridge-deepseek_v4_flash-pretrain-128g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash",
       "stage": "pretrain",
@@ -1316,13 +1334,12 @@
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-deepseek_v4_flash_test-pretrain-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash_test",
       "stage": "pretrain",
@@ -1350,13 +1367,12 @@
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-deepseek_v4_flash-sft-128g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash",
       "stage": "sft",
@@ -1384,13 +1400,12 @@
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-deepseek_v4_flash_test-sft-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash_test",
       "stage": "sft",
@@ -1418,13 +1433,12 @@
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-deepseek_v4_pro_test-pretrain-256g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_pro_test",
       "stage": "pretrain",
@@ -1452,13 +1466,12 @@
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-glm52_test-pretrain-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm52_test",
       "stage": "pretrain",
@@ -1486,13 +1499,12 @@
       "seq_len": 4096,
       "cookbook_doc": "GLM-5.2.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-glm52_test-sft-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm52_test",
       "stage": "sft",
@@ -1520,13 +1532,12 @@
       "seq_len": 8192,
       "cookbook_doc": "GLM-5.2.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-glm53_test-pretrain-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm53_test",
       "stage": "pretrain",
@@ -1554,13 +1565,12 @@
       "seq_len": 4096,
       "cookbook_doc": "GLM-5.3.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-minimax_m3_test-pretrain-16g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "minimax_m3_test",
       "stage": "pretrain",
@@ -1588,13 +1598,12 @@
       "seq_len": 4096,
       "cookbook_doc": "MiniMax-M3.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-minimax_m3-pretrain-256g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "minimax_m3",
       "stage": "pretrain",
@@ -1622,13 +1631,12 @@
       "seq_len": 4096,
       "cookbook_doc": "MiniMax-M3.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_text_35b_a3b-pretrain-32g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_text_35b_a3b",
       "stage": "pretrain",
@@ -1656,13 +1664,12 @@
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.5.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_text_9b-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_text_9b",
       "stage": "pretrain",
@@ -1690,81 +1697,12 @@
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.5.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
-      ]
-    },
-    {
-      "id": "bridge-qwen35_text_35b_a3b-sft-32g",
-      "enabled": false,
-      "framework": "megatron-bridge",
-      "model": "qwen35_text_35b_a3b",
-      "stage": "sft",
-      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_sft.sh",
-      "args": [
-        "qwen35_text_35b_a3b_sft_32gpu_bw1000_bf16_config",
-        "train",
-        "{hostfile}",
-        "{nodes}"
-      ],
-      "env": {
-        "GPUS": "{gpus_per_node}",
-        "PORT": "{ssh_port}"
-      },
-      "nodes": 4,
-      "min_world": 8,
-      "parallel": {
-        "tp": 8,
-        "pp": 1,
-        "cp": 1,
-        "ep": 8,
-        "etp": 1
-      },
-      "recipe": "qwen35_text_35b_a3b_sft_32gpu_bw1000_bf16_config",
-      "seq_len": 4096,
-      "cookbook_doc": "Qwen-3.5.md",
-      "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
-      ]
-    },
-    {
-      "id": "bridge-qwen35_text_9b-sft-8g",
-      "enabled": false,
-      "framework": "megatron-bridge",
-      "model": "qwen35_text_9b",
-      "stage": "sft",
-      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_sft.sh",
-      "args": [
-        "qwen35_text_9b_sft_8gpu_bw1000_bf16_config",
-        "train",
-        "{hostfile}",
-        "{nodes}"
-      ],
-      "env": {
-        "GPUS": "{gpus_per_node}",
-        "PORT": "{ssh_port}"
-      },
-      "nodes": 1,
-      "min_world": 8,
-      "parallel": {
-        "tp": 8,
-        "pp": 1,
-        "cp": 1,
-        "ep": 8,
-        "etp": 1
-      },
-      "recipe": "qwen35_text_9b_sft_8gpu_bw1000_bf16_config",
-      "seq_len": 4096,
-      "cookbook_doc": "Qwen-3.5.md",
-      "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_2b-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_2b",
       "stage": "pretrain",
@@ -1792,13 +1730,12 @@
       "seq_len": 2048,
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_2b_mock-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_2b_mock",
       "stage": "pretrain",
@@ -1827,13 +1764,12 @@
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
         "使用 mock 数据的 recipe",
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_4b-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_4b",
       "stage": "pretrain",
@@ -1861,13 +1797,12 @@
       "seq_len": 2048,
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_4b_mock-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_4b_mock",
       "stage": "pretrain",
@@ -1896,13 +1831,12 @@
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
         "使用 mock 数据的 recipe",
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_9b-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_9b",
       "stage": "pretrain",
@@ -1930,13 +1864,12 @@
       "seq_len": 2048,
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen35_vl_9b_mock-pretrain-8g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_9b_mock",
       "stage": "pretrain",
@@ -1965,13 +1898,12 @@
       "cookbook_doc": "Qwen-3.5-VL.md",
       "notes": [
         "使用 mock 数据的 recipe",
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
       "id": "bridge-qwen38_text_2_4t_test-pretrain-128g",
-      "enabled": false,
+      "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen38_text_2_4t_test",
       "stage": "pretrain",
@@ -1999,37 +1931,7 @@
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.8.md",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对",
-        "当前阶段暂停：site.json 的 frameworks_enabled 未包含 megatron-bridge（后面要跑时把它加进数组，重新 scan 或直接 build_matrix 即可）"
-      ]
-    },
-    {
-      "id": "swift-qwen35_35b_a3b-sft-8g",
-      "enabled": false,
-      "framework": "ms-swift",
-      "model": "qwen35_35b_a3b",
-      "stage": "sft",
-      "launcher": "ms-swift/run_qwen.sh",
-      "args": [
-        "{hostfile}",
-        "{nodes}"
-      ],
-      "env": {},
-      "nodes": 1,
-      "min_world": 8,
-      "parallel": {
-        "tp": 2,
-        "pp": 1,
-        "cp": 1,
-        "ep": 8,
-        "etp": 1
-      },
-      "mbs": 4,
-      "gbs": 128,
-      "seq_len": 32768,
-      "cookbook_doc": "Qwen-3.5.md",
-      "notes": [
-        "run_qwen.sh 把日志写到写死的 /data/home/... 路径，运行前需修改"
+        "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     }
   ]

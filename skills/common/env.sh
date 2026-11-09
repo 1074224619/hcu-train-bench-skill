@@ -60,8 +60,8 @@ else
   export NCCL_SOCKET_IFNAME GLOO_SOCKET_IFNAME
 fi
 
-# export GLOO_SOCKET_IFNAME=ens69f0
-# export NCCL_SOCKET_IFNAME=ens69f0
+# export GLOO_SOCKET_IFNAME=
+# export NCCL_SOCKET_IFNAME=
 
 export ROCSHMEM_MAX_NUM_CONTEXTS=48
 export ROCSHMEM_HEAP_SIZE=10737418240
@@ -138,7 +138,12 @@ case "$IB_TYPE" in
     export NCCL_IB_HCA
     export NCCL_PXN_DISABLE=0
     export NCCL_PLUGIN_P2P=ib
-    export NCCL_NET_PLUGIN=shca
+    # NCCL_NET_PLUGIN intentionally NOT set: forcing the shca net plugin here
+    # reproducibly breaks 2+ node jobs with "socketFinalizeAccept ... wrong
+    # type" inside ncclIbAccept (ib_plugin.c) -- confirmed by a minimal
+    # 2-node torch.distributed barrier() test that fails with this line set
+    # and passes 16/16 ranks with it unset, all other vars held fixed. Leave
+    # unset so NCCL falls back to its own built-in net transport.
     export RCCL_PXN_GPU_BALANCE=1
     export SHCA_DEBUG_MASK=0
     export SHCA_CMR_LOG_LEVEL=1
