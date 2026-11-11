@@ -8,6 +8,7 @@ The catalog is a starting point: review it, fix `nodes`, add model/data paths in
 defaults; the authoritative parallel config of a run is read back from its log.
 """
 import argparse
+import fnmatch
 import re
 from pathlib import Path
 
@@ -37,6 +38,46 @@ def grab(text, name):
 def grab_flag(text, flag):
     m = re.search(rf"--{flag}\s+(\d+)", text)
     return int(m.group(1)) if m else None
+
+
+CASE_BLOCK_RE = re.compile(r"case\s+\"?\$\{?1\}?\"?\s+in\b(.*?)^\s*esac\b", re.M | re.S)
+CASE_ARM_RE = re.compile(r"^\s*([^)\s][^)]*)\)\s*(.*)$")
+
+
+def recipe_case_parallels(text):
+    """Map recipe name -> (tp, pp, ep) from a ``case "$1" in ... esac`` table.
+
+    Launchers that pick parallelism per recipe write ``read -r TP PP EP <<<
+    "$(recipe_parallel_defaults "$1")"``, so ASSIGN_RE cannot see the values.
+    The arms are matched in file order, like bash: first match wins and ``*``
+    is the fallback.
+    """
+    block = CASE_BLOCK_RE.search(text)
+    if not block:
+        return None
+    arms = []
+    for line in block.group(1).splitlines():
+        line = line.split("#", 1)[0].strip().rstrip(";").strip()
+        arm = CASE_ARM_RE.match(line)
+        if not arm:
+            continue
+        values = re.search(r'echo\s+"?([\d\s]+?)"?\s*$', arm.group(2))
+        if not values:
+            continue
+        triple = tuple(int(v) for v in values.group(1).split())
+        if len(triple) != 3:
+            continue
+        arms.append(([p.strip() for p in arm.group(1).split("|")], triple))
+    if not arms:
+        return None
+
+    def lookup(recipe):
+        for patterns, triple in arms:
+            if any(fnmatch.fnmatchcase(recipe, p) for p in patterns):
+                return triple
+        return None
+
+    return lookup
 
 
 def cookbook_doc(model):
@@ -114,13 +155,30 @@ def scan_megatron_bridge(root, gpn):
             gpus = int(re.search(r"_(\d+)gpu_", recipe).group(1))
             model, stage = re.match(r"(.+?)_(pretrain|sft)_", recipe).groups()
             suffix = "".join(f"_{t}" for t in ("mock", "test") if f"_{t}_" in recipe + "_")
+            # Recipes exist per hardware platform (the same model/size has a
+            # bw1000 and a bw1100 variant), so the platform has to be part of
+            # the case id -- otherwise both variants produce the identical id
+            # and run_cases.py's status/<id>.json would collide. It must NOT go
+            # into `model`, which build_matrix.py uses to look up site.json's
+            # models preset.
+            platform = re.search(r"_(\d+gpu)_([a-z][a-z0-9]*)_[a-z0-9_]*config$", recipe)
+            platform = platform.group(2) if platform else ""
             notes = ["使用 mock 数据的 recipe"] if "mock" in recipe else []
+            par = parallel_of(text, grab)
+            lookup = recipe_case_parallels(text)
+            if lookup:
+                triple = lookup(recipe)
+                if triple:
+                    par["tp"], par["pp"], par["ep"] = triple
+                    notes = notes + [f"并行参数取自 recipe_parallel_defaults 的 case 分支（TP{par['tp']}/PP{par['pp']}/EP{par['ep']}）"]
             c = case(
                 "megatron-bridge", model + suffix, stage,
                 str(train.relative_to(root)), [recipe, "train", "{hostfile}", "{nodes}"],
                 {"GPUS": "{gpus_per_node}", "PORT": "{ssh_port}"},
-                parallel_of(text, grab), gpn, {"recipe": recipe, "seq_len": grab(text, "SEQ_LENGTH")},
+                par, gpn, {"recipe": recipe, "seq_len": grab(text, "SEQ_LENGTH")},
                 [], max(1, gpus // gpn))
+            if platform:
+                c["id"] = c["id"].replace(model + suffix + "-", f"{model}{suffix}_{platform}-", 1)
             c["notes"] = notes + ["并行参数取自脚本默认值，需按 recipe 核对"]
             c["enabled"] = True
             cases.append(c)
@@ -128,7 +186,10 @@ def scan_megatron_bridge(root, gpn):
 
 
 def scan_ms_swift(root, gpn):
-    cases, base = [], root / "ms-swift"
+    # The checkout directory is ms-swift-das, matching the Megatron-*-das naming
+    # of the other frameworks; a bare "ms-swift" never exists here, so the
+    # scanner silently found zero ms-swift cases.
+    cases, base = [], root / "ms-swift-das"
     launcher = base / "run_qwen.sh"
     for train in sorted(base.glob("train_*.sh")):
         text = train.read_text(errors="ignore")

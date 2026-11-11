@@ -39,6 +39,28 @@ FAMILY = [
 ]
 
 
+def rec_platform(rec, default):
+    """Per-case hardware platform (bw1000 / bw1100 / gb200 ...).
+
+    The same model now has a recipe per platform, so one run can contain several
+    platforms at once; falling back to site.json's single `platform` would file
+    every result under one directory and let same-named logs overwrite each
+    other. The platform is carried in the recipe name and the case id.
+    """
+    for field in ("recipe", "id"):
+        value = rec.get(field) or ""
+        m = re.search(r"(?:^|[_\-])(bw\d{4}|gb\d{3})(?=[_\-]|$)", value)
+        if m:
+            return m.group(1).upper()
+    return default
+
+
+def platform_suffix(rec):
+    m = re.search(r"(?:^|[_\-])(bw\d{4}|gb\d{3})(?=[_\-]|$)",
+                  (rec.get("recipe") or "") + " " + (rec.get("id") or ""))
+    return f"-{m.group(1)}" if m else ""
+
+
 def display_name(rec):
     """Cookbook model-column name, e.g. qwen35_text_9b -> Qwen3.5-9B. Override with catalog display_name."""
     if rec.get("display_name"):
@@ -55,11 +77,15 @@ def display_name(rec):
     return name + ("(sft)" if rec.get("stage") == "sft" else "")
 
 
-def log_name(rec):
+def log_name(rec, disambiguate=False):
     par = "".join(f"{k}{rec[k]}" for k in ("tp", "pp", "ep", "cp") if rec.get(k))
     mbs = f"-mbs{rec['mbs']}" if rec.get("mbs") and rec["mbs"] != 1 else ""
+    # Two platforms can produce the identical log name for one model (same
+    # dcu count / batch / parallel); only then tag the platform in, so the
+    # normal single-platform naming stays unchanged.
+    plat = platform_suffix(rec) if disambiguate else ""
     return (f"{display_name(rec)}-dcu{rec['gpus']}-b{rec['gbs']}-s{rec['seq_len']}{mbs}"
-            f"-{par}-{FRAMEWORK_SHORT[rec['framework']]}.log")
+            f"-{par}{plat}-{FRAMEWORK_SHORT[rec['framework']]}.log")
 
 
 def cell(v):
@@ -70,7 +96,7 @@ def cell(v):
     return str(v)
 
 
-def html_row(rec, stat):
+def html_row(rec, stat, logname=None):
     sfx = "_best" if stat == "best" else ""
     dp = rec.get("dp") or (rec["gpus"] // max(1, (rec.get("tp") or 1) * (rec.get("pp") or 1) * (rec.get("cp") or 1)))
     tds = lambda vals: "".join(f"<td>{cell(v)}</td>" for v in vals)
@@ -86,17 +112,17 @@ def html_row(rec, stat):
         "      " + tds([rec.get("tflops" + sfx), rec.get("time_s" + sfx), rec.get("tgs" + sfx)]),
         "      " + tds([None] * 4),
         "      <td></td>",
-        f'      <td align="center"><a href="./logs/{log_name(rec)}">log</a></td>',
+        f'      <td align="center"><a href="./logs/{logname or log_name(rec)}">log</a></td>',
         "    </tr>",
     ])
 
 
-def csv_row(rec, run_id, platform, stat):
+def csv_row(rec, run_id, platform, stat, logname=None):
     sfx = "_best" if stat == "best" else ""
     row = {k: cell(rec.get(k)) for k in CSV_FIELDS}
     row.update(date=run_id[:8], run_id=run_id, case=rec["id"], platform=platform, model=display_name(rec),
                tflops=cell(rec.get("tflops" + sfx)), time_s=cell(rec.get("time_s" + sfx)),
-               tgs=cell(rec.get("tgs" + sfx)), stat=stat, log=log_name(rec))
+               tgs=cell(rec.get("tgs" + sfx)), stat=stat, log=logname or log_name(rec))
     return row
 
 
@@ -201,21 +227,32 @@ def export(a, run_dir, platform, run_id, bench, st):
             issues.append((rec["id"], "没有对应的 cookbook 文档（cookbook_doc 为空）",
                            "在 catalog.json 给该用例填 cookbook_doc，或在 scan_examples.COOKBOOK_DOCS 加映射"))
             continue
-        doc = bench / "results" / RESULT_DIR[rec["framework"]] / platform / rec["cookbook_doc"]
+        plat = rec_platform(rec, platform)
+        doc = bench / "results" / RESULT_DIR[rec["framework"]] / plat / rec["cookbook_doc"]
         by_doc.setdefault(doc, []).append(rec)
-        csv_rows.append(csv_row(rec, run_id, platform, a.stat))
+        csv_rows.append(csv_row(rec, run_id, plat, a.stat))
+
+    # Same model on two platforms + same dcu/batch/parallel => identical log file
+    # name. Only then tag the platform into the name; single-platform runs keep
+    # the existing naming.
+    def collision_names(items):
+        names = [log_name(r) for r in items]
+        dupes = {n for n in names if names.count(n) > 1}
+        return {r["id"]: log_name(r, disambiguate=log_name(r) in dupes) for r in items}
 
     for doc, items in by_doc.items():
-        rows_md = "\n".join(html_row(r, a.stat) for r in items)
+        names = collision_names(items)
+        rows_md = "\n".join(html_row(r, a.stat, logname=names[r["id"]]) for r in items)
         (stage / doc.name).write_text(rows_md + "\n")
         logs_dir = doc.parent / "logs"
         print(f"== {doc.relative_to(bench)}  (+{len(items)} rows{'' if doc.exists() else ', NEW FILE needed'})")
         for r in items:
-            print(f"   {r['id']}: tflops={r.get('tflops')} time={r.get('time_s')}s tgs={r.get('tgs')} -> logs/{log_name(r)}")
+            print(f"   {r['id']}: tflops={r.get('tflops')} time={r.get('time_s')}s tgs={r.get('tgs')} -> logs/{names[r['id']]}")
         if doc.exists():
             preview_text = doc.read_text()
             for r in items:
-                _, how = place_row(preview_text, display_name(r), html_row(r, a.stat))
+                _, how = place_row(preview_text, display_name(r),
+                                   html_row(r, a.stat, logname=names[r["id"]]))
                 if how.startswith("跳过"):
                     print(f"   [{'skip' if a.apply else 'would skip'}] {r['id']}: {how}")
         if not a.apply:
@@ -228,11 +265,11 @@ def export(a, run_dir, platform, run_id, bench, st):
         logs_dir.mkdir(parents=True, exist_ok=True)
         text, done = doc.read_text(), []
         for r in items:
-            text, how = place_row(text, display_name(r), html_row(r, a.stat))
+            text, how = place_row(text, display_name(r), html_row(r, a.stat, logname=names[r["id"]]))
             if how.startswith("跳过"):
                 issues.append((r["id"], how, "确认是否需要人工用更差的结果覆盖已有记录"))
                 continue
-            shutil.copy2(r["log"], logs_dir / log_name(r))
+            shutil.copy2(r["log"], logs_dir / names[r["id"]])
             done.append(f"{r['id']}: {how}")
         doc.write_text(text)
         if done:

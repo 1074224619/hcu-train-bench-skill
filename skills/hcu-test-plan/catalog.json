@@ -1305,47 +1305,23 @@
       ]
     },
     {
-      "id": "bridge-deepseek_v4_flash-pretrain-128g",
-      "enabled": true,
+      "id": "bridge-train_deepseekv4_flash_peft",
+      "enabled": false,
       "framework": "megatron-bridge",
-      "model": "deepseek_v4_flash",
-      "stage": "pretrain",
-      "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_flash_pretrain.sh",
-      "args": [
-        "deepseek_v4_flash_pretrain_128gpu_BW1000_bf16_config",
-        "train",
-        "{hostfile}",
-        "{nodes}"
-      ],
-      "env": {
-        "GPUS": "{gpus_per_node}",
-        "PORT": "{ssh_port}"
-      },
-      "nodes": 16,
-      "min_world": 32,
-      "parallel": {
-        "tp": 1,
-        "pp": 2,
-        "cp": 1,
-        "ep": 16,
-        "etp": 1
-      },
-      "recipe": "deepseek_v4_flash_pretrain_128gpu_BW1000_bf16_config",
-      "seq_len": 4096,
-      "cookbook_doc": "DeepSeek-4.md",
+      "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_flash_peft.sh",
       "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对"
+        "脚本中未找到 recipe 列表，需手动添加用例"
       ]
     },
     {
-      "id": "bridge-deepseek_v4_flash_test-pretrain-32g",
+      "id": "bridge-deepseek_v4_flash_test_bw1000-pretrain-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash_test",
       "stage": "pretrain",
       "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_flash_pretrain.sh",
       "args": [
-        "deepseek_v4_flash_pretrain_32gpu_BW1000_bf16_test_config",
+        "deepseek_v4_flash_pretrain_32gpu_bw1000_bf16_test_config",
         "train",
         "{hostfile}",
         "{nodes}"
@@ -1363,7 +1339,7 @@
         "ep": 16,
         "etp": 1
       },
-      "recipe": "deepseek_v4_flash_pretrain_32gpu_BW1000_bf16_test_config",
+      "recipe": "deepseek_v4_flash_pretrain_32gpu_bw1000_bf16_test_config",
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
@@ -1371,47 +1347,14 @@
       ]
     },
     {
-      "id": "bridge-deepseek_v4_flash-sft-128g",
-      "enabled": true,
-      "framework": "megatron-bridge",
-      "model": "deepseek_v4_flash",
-      "stage": "sft",
-      "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_flash_sft.sh",
-      "args": [
-        "deepseek_v4_flash_sft_128gpu_BW1000_bf16_config",
-        "train",
-        "{hostfile}",
-        "{nodes}"
-      ],
-      "env": {
-        "GPUS": "{gpus_per_node}",
-        "PORT": "{ssh_port}"
-      },
-      "nodes": 16,
-      "min_world": 32,
-      "parallel": {
-        "tp": 1,
-        "pp": 2,
-        "cp": 1,
-        "ep": 16,
-        "etp": 1
-      },
-      "recipe": "deepseek_v4_flash_sft_128gpu_BW1000_bf16_config",
-      "seq_len": 4096,
-      "cookbook_doc": "DeepSeek-4.md",
-      "notes": [
-        "并行参数取自脚本默认值，需按 recipe 核对"
-      ]
-    },
-    {
-      "id": "bridge-deepseek_v4_flash_test-sft-32g",
+      "id": "bridge-deepseek_v4_flash_test_bw1000-sft-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "deepseek_v4_flash_test",
       "stage": "sft",
       "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_flash_sft.sh",
       "args": [
-        "deepseek_v4_flash_sft_32gpu_BW1000_bf16_test_config",
+        "deepseek_v4_flash_sft_32gpu_bw1000_bf16_test_config",
         "train",
         "{hostfile}",
         "{nodes}"
@@ -1429,7 +1372,7 @@
         "ep": 16,
         "etp": 1
       },
-      "recipe": "deepseek_v4_flash_sft_32gpu_BW1000_bf16_test_config",
+      "recipe": "deepseek_v4_flash_sft_32gpu_bw1000_bf16_test_config",
       "seq_len": 4096,
       "cookbook_doc": "DeepSeek-4.md",
       "notes": [
@@ -1437,14 +1380,14 @@
       ]
     },
     {
-      "id": "bridge-deepseek_v4_pro_test-pretrain-256g",
+      "id": "bridge-gemma3_1b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
-      "model": "deepseek_v4_pro_test",
+      "model": "gemma3_1b",
       "stage": "pretrain",
-      "launcher": "Megatron-bridge-das/examples/deepseek/train_deepseekv4_pro_pretrain.sh",
+      "launcher": "Megatron-bridge-das/examples/gemma/train_gemma3_pretrain.sh",
       "args": [
-        "deepseek_v4_pro_pretrain_256gpu_bw1000_bf16_test_config",
+        "gemma3_1b_pretrain_8gpu_bw1000_bf16_config",
         "train",
         "{hostfile}",
         "{nodes}"
@@ -1453,24 +1396,57 @@
         "GPUS": "{gpus_per_node}",
         "PORT": "{ssh_port}"
       },
-      "nodes": 32,
-      "min_world": 128,
+      "nodes": 1,
+      "min_world": 1,
       "parallel": {
         "tp": 1,
-        "pp": 2,
+        "pp": 1,
         "cp": 1,
-        "ep": 64,
+        "ep": 1,
         "etp": 1
       },
-      "recipe": "deepseek_v4_pro_pretrain_256gpu_bw1000_bf16_test_config",
+      "recipe": "gemma3_1b_pretrain_8gpu_bw1000_bf16_config",
       "seq_len": 4096,
-      "cookbook_doc": "DeepSeek-4.md",
+      "cookbook_doc": null,
       "notes": [
         "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
-      "id": "bridge-glm52_test-pretrain-32g",
+      "id": "bridge-gemma4_e4b_bw1000-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "gemma4_e4b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/gemma/train_gemma4_pretrain.sh",
+      "args": [
+        "gemma4_e4b_pretrain_16gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 4,
+      "parallel": {
+        "tp": 4,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "gemma4_e4b_pretrain_16gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": null,
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-glm52_test_bw1000-pretrain-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm52_test",
@@ -1503,7 +1479,7 @@
       ]
     },
     {
-      "id": "bridge-glm52_test-sft-32g",
+      "id": "bridge-glm52_test_bw1000-sft-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm52_test",
@@ -1536,7 +1512,7 @@
       ]
     },
     {
-      "id": "bridge-glm53_test-pretrain-32g",
+      "id": "bridge-glm53_test_bw1000-pretrain-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "glm53_test",
@@ -1569,7 +1545,7 @@
       ]
     },
     {
-      "id": "bridge-minimax_m3_test-pretrain-16g",
+      "id": "bridge-minimax_m3_test_bw1000-pretrain-16g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "minimax_m3_test",
@@ -1602,14 +1578,14 @@
       ]
     },
     {
-      "id": "bridge-minimax_m3-pretrain-256g",
+      "id": "bridge-qwen35_text_0_8b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
-      "model": "minimax_m3",
+      "model": "qwen35_text_0_8b",
       "stage": "pretrain",
-      "launcher": "Megatron-bridge-das/examples/minimax/train_minimax_m3_pretrain.sh",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
       "args": [
-        "minimax_m3_pretrain_256gpu_bw1000_bf16_config",
+        "qwen35_text_0_8b_pretrain_8gpu_bw1000_bf16_config",
         "train",
         "{hostfile}",
         "{nodes}"
@@ -1618,24 +1594,297 @@
         "GPUS": "{gpus_per_node}",
         "PORT": "{ssh_port}"
       },
-      "nodes": 32,
-      "min_world": 4,
+      "nodes": 1,
+      "min_world": 1,
       "parallel": {
         "tp": 1,
         "pp": 1,
         "cp": 1,
-        "ep": 4,
+        "ep": 1,
         "etp": 1
       },
-      "recipe": "minimax_m3_pretrain_256gpu_bw1000_bf16_config",
+      "recipe": "qwen35_text_0_8b_pretrain_8gpu_bw1000_bf16_config",
       "seq_len": 4096,
-      "cookbook_doc": "MiniMax-M3.md",
+      "cookbook_doc": "Qwen-3.5.md",
       "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
         "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
-      "id": "bridge-qwen35_text_35b_a3b-pretrain-32g",
+      "id": "bridge-qwen35_text_0_8b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_0_8b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_0_8b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_0_8b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_122b_a10b_bw1000-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_122b_a10b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_122b_a10b_pretrain_32gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 8,
+      "parallel": {
+        "tp": 4,
+        "pp": 2,
+        "cp": 1,
+        "ep": 4,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_122b_a10b_pretrain_32gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP4/PP2/EP4）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_122b_a10b_bw1100-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_122b_a10b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_122b_a10b_pretrain_32gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 8,
+      "parallel": {
+        "tp": 4,
+        "pp": 2,
+        "cp": 1,
+        "ep": 4,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_122b_a10b_pretrain_32gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP4/PP2/EP4）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_27b_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_27b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_27b_pretrain_8gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 8,
+      "parallel": {
+        "tp": 4,
+        "pp": 2,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_27b_pretrain_8gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP4/PP2/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_27b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_27b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_27b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 4,
+      "parallel": {
+        "tp": 2,
+        "pp": 2,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_27b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP2/PP2/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_2b_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_2b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_2b_pretrain_8gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_2b_pretrain_8gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_2b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_2b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_2b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_2b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_35b_a3b_bw1100-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_35b_a3b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_35b_a3b_pretrain_16gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 8,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 8,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_35b_a3b_pretrain_16gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP8）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_35b_a3b_bw1000-pretrain-32g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_text_35b_a3b",
@@ -1652,6 +1901,108 @@
         "PORT": "{ssh_port}"
       },
       "nodes": 4,
+      "min_world": 32,
+      "parallel": {
+        "tp": 1,
+        "pp": 4,
+        "cp": 1,
+        "ep": 8,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_35b_a3b_pretrain_32gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP4/EP8）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_397b_a17b_bw1000-pretrain-64g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_397b_a17b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_397b_a17b_pretrain_64gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 8,
+      "min_world": 32,
+      "parallel": {
+        "tp": 4,
+        "pp": 4,
+        "cp": 1,
+        "ep": 8,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_397b_a17b_pretrain_64gpu_bw1000_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP4/PP4/EP8）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_397b_a17b_bw1100-pretrain-64g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_397b_a17b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_397b_a17b_pretrain_64gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 8,
+      "min_world": 32,
+      "parallel": {
+        "tp": 4,
+        "pp": 4,
+        "cp": 1,
+        "ep": 8,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_397b_a17b_pretrain_64gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP4/PP4/EP8）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_4b_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_4b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_4b_pretrain_8gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
       "min_world": 2,
       "parallel": {
         "tp": 2,
@@ -1660,15 +2011,50 @@
         "ep": 1,
         "etp": 1
       },
-      "recipe": "qwen35_text_35b_a3b_pretrain_32gpu_bw1000_bf16_config",
+      "recipe": "qwen35_text_4b_pretrain_8gpu_bw1000_bf16_config",
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.5.md",
       "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP2/PP1/EP1）",
         "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
-      "id": "bridge-qwen35_text_9b-pretrain-8g",
+      "id": "bridge-qwen35_text_4b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_4b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_4b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_4b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_text_9b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_text_9b",
@@ -1697,11 +2083,314 @@
       "seq_len": 4096,
       "cookbook_doc": "Qwen-3.5.md",
       "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP2/PP1/EP1）",
         "并行参数取自脚本默认值，需按 recipe 核对"
       ]
     },
     {
-      "id": "bridge-qwen35_vl_2b-pretrain-8g",
+      "id": "bridge-qwen35_text_9b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_text_9b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_text_pretrain.sh",
+      "args": [
+        "qwen35_text_9b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_text_9b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 4096,
+      "cookbook_doc": "Qwen-3.5.md",
+      "notes": [
+        "并行参数取自 recipe_parallel_defaults 的 case 分支（TP1/PP1/EP1）",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_122b_a10b_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_122b_a10b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_122b_a10b_pretrain_8gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_122b_a10b_pretrain_8gpu_bw1000_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_122b_a10b_mock_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_122b_a10b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_122b_a10b_pretrain_8gpu_bw1000_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_122b_a10b_pretrain_8gpu_bw1000_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_122b_a10b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_122b_a10b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_122b_a10b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_122b_a10b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_122b_a10b_mock_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_122b_a10b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_122b_a10b_pretrain_8gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_122b_a10b_pretrain_8gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_27b_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_27b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_27b_pretrain_8gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_27b_pretrain_8gpu_bw1000_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_27b_mock_bw1000-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_27b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_27b_pretrain_8gpu_bw1000_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_27b_pretrain_8gpu_bw1000_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_27b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_27b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_27b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_27b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_27b_mock_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_27b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_27b_pretrain_8gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_27b_pretrain_8gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_2b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_2b",
@@ -1734,7 +2423,7 @@
       ]
     },
     {
-      "id": "bridge-qwen35_vl_2b_mock-pretrain-8g",
+      "id": "bridge-qwen35_vl_2b_mock_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_2b_mock",
@@ -1768,7 +2457,342 @@
       ]
     },
     {
-      "id": "bridge-qwen35_vl_4b-pretrain-8g",
+      "id": "bridge-qwen35_vl_2b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_2b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_2b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_2b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_2b_mock_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_2b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_2b_pretrain_8gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_2b_pretrain_8gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_35b_a3b_bw1000-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_35b_a3b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_35b_a3b_pretrain_16gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_35b_a3b_pretrain_16gpu_bw1000_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_35b_a3b_mock_bw1000-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_35b_a3b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_35b_a3b_pretrain_16gpu_bw1000_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_35b_a3b_pretrain_16gpu_bw1000_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_35b_a3b_bw1100-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_35b_a3b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_35b_a3b_pretrain_16gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_35b_a3b_pretrain_16gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_35b_a3b_mock_bw1100-pretrain-16g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_35b_a3b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_35b_a3b_pretrain_16gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 2,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_35b_a3b_pretrain_16gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_397b_a17b_bw1000-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_397b_a17b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_397b_a17b_pretrain_32gpu_bw1000_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_397b_a17b_pretrain_32gpu_bw1000_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_397b_a17b_mock_bw1000-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_397b_a17b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_397b_a17b_pretrain_32gpu_bw1000_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_397b_a17b_pretrain_32gpu_bw1000_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_397b_a17b_bw1100-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_397b_a17b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_397b_a17b_pretrain_32gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_397b_a17b_pretrain_32gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_397b_a17b_mock_bw1100-pretrain-32g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_397b_a17b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_397b_a17b_pretrain_32gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 4,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_397b_a17b_pretrain_32gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_4b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_4b",
@@ -1801,7 +2825,7 @@
       ]
     },
     {
-      "id": "bridge-qwen35_vl_4b_mock-pretrain-8g",
+      "id": "bridge-qwen35_vl_4b_mock_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_4b_mock",
@@ -1835,7 +2859,74 @@
       ]
     },
     {
-      "id": "bridge-qwen35_vl_9b-pretrain-8g",
+      "id": "bridge-qwen35_vl_4b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_4b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_4b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_4b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_4b_mock_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_4b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_4b_pretrain_8gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_4b_pretrain_8gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_9b_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_9b",
@@ -1868,7 +2959,7 @@
       ]
     },
     {
-      "id": "bridge-qwen35_vl_9b_mock-pretrain-8g",
+      "id": "bridge-qwen35_vl_9b_mock_bw1000-pretrain-8g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen35_vl_9b_mock",
@@ -1902,7 +2993,74 @@
       ]
     },
     {
-      "id": "bridge-qwen38_text_2_4t_test-pretrain-128g",
+      "id": "bridge-qwen35_vl_9b_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_9b",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_9b_pretrain_8gpu_bw1100_bf16_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_9b_pretrain_8gpu_bw1100_bf16_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen35_vl_9b_mock_bw1100-pretrain-8g",
+      "enabled": true,
+      "framework": "megatron-bridge",
+      "model": "qwen35_vl_9b_mock",
+      "stage": "pretrain",
+      "launcher": "Megatron-bridge-das/examples/qwen/train_qwen35_vl_pretrain.sh",
+      "args": [
+        "qwen35_vl_9b_pretrain_8gpu_bw1100_bf16_mock_config",
+        "train",
+        "{hostfile}",
+        "{nodes}"
+      ],
+      "env": {
+        "GPUS": "{gpus_per_node}",
+        "PORT": "{ssh_port}"
+      },
+      "nodes": 1,
+      "min_world": 1,
+      "parallel": {
+        "tp": 1,
+        "pp": 1,
+        "cp": 1,
+        "ep": 1,
+        "etp": 1
+      },
+      "recipe": "qwen35_vl_9b_pretrain_8gpu_bw1100_bf16_mock_config",
+      "seq_len": 2048,
+      "cookbook_doc": "Qwen-3.5-VL.md",
+      "notes": [
+        "使用 mock 数据的 recipe",
+        "并行参数取自脚本默认值，需按 recipe 核对"
+      ]
+    },
+    {
+      "id": "bridge-qwen38_text_2_4t_test_bw1000-pretrain-128g",
       "enabled": true,
       "framework": "megatron-bridge",
       "model": "qwen38_text_2_4t_test",
