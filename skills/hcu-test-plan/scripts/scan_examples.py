@@ -175,7 +175,7 @@ def scan_megatron_bridge(root, gpn):
                 "megatron-bridge", model + suffix, stage,
                 str(train.relative_to(root)), [recipe, "train", "{hostfile}", "{nodes}"],
                 {"GPUS": "{gpus_per_node}", "PORT": "{ssh_port}"},
-                par, gpn, {"recipe": recipe, "seq_len": grab(text, "SEQ_LENGTH")},
+                par, gpn, {"recipe": recipe, "seq_len": grab(text, "SEQ_LENGTH"), "platform": platform},
                 [], max(1, gpus // gpn))
             if platform:
                 c["id"] = c["id"].replace(model + suffix + "-", f"{model}{suffix}_{platform}-", 1)
@@ -228,12 +228,45 @@ def apply_frameworks_enabled(cases, site):
     return cases
 
 
+def normalize_platform(value):
+    """Lowercase and drop separators so BW1100 / bw-1100 compare equal."""
+    return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+
+
+def apply_platform_filter(cases, site, platform=None):
+    """Disable bridge recipes that belong to a different compute-card platform.
+
+    Bridge recipe names carry the hardware platform (``..._8gpu_bw1000_...`` vs
+    ``..._8gpu_bw1100_...``) and the two variants are not interchangeable: their
+    parallelism defaults differ and BW1100 uses the DeepEP dispatcher because
+    HybridEP is not installed in that container. The target comes from
+    ``--platform`` when given, else site.json's ``platform``. ``--platform any``
+    (or no target at all) keeps every variant enabled for deliberately
+    cross-platform catalogs.
+    """
+    target = platform if platform is not None else (site or {}).get("platform")
+    if not target or normalize_platform(target) == "any":
+        return cases
+    want = normalize_platform(target)
+    for c in cases:
+        recipe_platform = c.get("platform") or ""
+        if (c.get("framework") == "megatron-bridge" and recipe_platform
+                and normalize_platform(recipe_platform) != want and c.get("enabled")):
+            c["enabled"] = False
+            c["platform_disabled"] = True
+            c["notes"].append(
+                f"计算卡平台不匹配：recipe 平台 {recipe_platform}，目标平台 {target}"
+                "（改 site.json 的 platform / 用 --platform 指定；确实要跑这个变体时用 --platform any）")
+    return cases
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("frameworks_root", type=Path)
     ap.add_argument("-o", "--output", type=Path, default=Path("catalog.json"))
     ap.add_argument("--gpus-per-node", type=int, default=8)
     ap.add_argument("--site", type=Path, help="site.json; 给出时把扫描结果写入 <runs_dir>/bench_log.md，并按 frameworks_enabled 过滤")
+    ap.add_argument("--platform", help="目标计算卡平台（如 BW1100）；默认取 site.json 的 platform；any = 不过滤")
     a = ap.parse_args()
     root, gpn = abspath_literal(a.frameworks_root), a.gpus_per_node
     site = load_json(a.site) if a.site else None
@@ -242,28 +275,33 @@ def main():
     with benchlog.Step(site["runs_dir"] if site else None, "scan", plan) as st:
         cases = scan_megatron_lm(root, gpn) + scan_megatron_bridge(root, gpn) + scan_ms_swift(root, gpn)
         cases = apply_frameworks_enabled(cases, site)
+        cases = apply_platform_filter(cases, site, a.platform)
         save_json(a.output, {"frameworks_root": str(root), "gpus_per_node": gpn, "cases": cases})
         n_on = sum(1 for c in cases if c.get("enabled"))
         print(f"共 {len(cases)} 个用例（启用 {n_on}，关闭 {len(cases) - n_on}），已写入 {a.output}")
         for c in cases:
             flag = "启用" if c.get("enabled") else "关闭"
             print(f"  [{flag}] {c['id']:<55} 节点数={c.get('nodes', '?')}  {'; '.join(c.get('notes', []))}")
-        log_scan(st, a, cases, n_on)
+        log_scan(st, a, cases, n_on, site)
 
 
-def log_scan(st, a, cases, n_on):
+def log_scan(st, a, cases, n_on, site):
     by_fw = {}
     for c in cases:
         fw = by_fw.setdefault(c["framework"], [0, 0])
         fw[0 if c.get("enabled") else 1] += 1
     results = [f"共 {len(cases)} 个用例，启用 {n_on}，关闭 {len(cases) - n_on}，写入 {a.output}"]
     results += [f"{fw}：启用 {on}，关闭 {off}" for fw, (on, off) in by_fw.items()]
+    target_platform = a.platform if a.platform is not None else (site or {}).get("platform")
+    if target_platform:
+        results.append(f"目标计算卡平台：{target_platform}（bridge recipe 平台不匹配的用例已关闭；--platform any 可不过滤）")
     issues, groups = [], {}
     for c in cases:
         if not c.get("enabled"):
             groups.setdefault("；".join(c.get("notes", [])) or "未注明", []).append(c["id"])
     for why, ids in groups.items():
         fix = ("在 site.json 的 frameworks_enabled 加上该框架后重新 scan 或直接 build_matrix" if "frameworks_enabled" in why else
+               "改 site.json 的 platform / 用 --platform 指定目标卡型，或换匹配平台的 recipe" if "平台不匹配" in why else
                "在 site.json 填写数据集/模型/tokenizer 路径" if "PATH" in why else
                "改成可传参后重新扫描" if "run_qwen.sh" in why else "按原因修改脚本或在 catalog.json 中手动启用")
         issues.append((f"{len(ids)} 个：{', '.join(ids[:4])}{' …' if len(ids) > 4 else ''}", f"已关闭：{why}", fix))

@@ -33,7 +33,7 @@ BenchAgent/
 
 ## 共享约定
 
-- **配置**：`runs/site.json`，从 `common/site.example.json` 复制后填写（镜像、容器名、ssh 端口、挂载、平台、每节点卡数、集群环境脚本 `env_script`、框架和 cookbook 路径）。所有子 skill 都读它。现阶段只跑哪些框架（如先只跑 megatron-lm，bridge/swift 后面再开）用 `frameworks_enabled` 字段限制，见 hcu-test-plan/SKILL.md。
+- **配置**：`runs/site.json`，从 `common/site.example.json` 复制后填写（镜像、容器名、ssh 端口、挂载、平台、每节点卡数、集群环境脚本 `env_script`、框架和 cookbook 路径）。所有子 skill 都读它。现阶段只跑哪些框架（如先只跑 megatron-lm，bridge/swift 后面再开）用 `frameworks_enabled` 字段限制，见 hcu-test-plan/SKILL.md。`platform` 必须和节点实际卡型一致（bw1000/bw1100 的 bridge recipe 并行默认值和通信后端不同，不能混跑），见 hcu-test-plan/SKILL.md「计算卡平台匹配」。
 - **路径**：frameworks、runs、数据集、模型在登录节点、计算节点、容器内绝对路径相同；容器挂载只来自 `container.mounts`。
 - **节点列表**：`hostfile.all`（用户给的全部）→ `hostfile`（可 ssh，建容器用）→ `idle_hosts`（空闲，跑测试用）→ `healthy_hosts`（空闲且检查通过）。
 - **日志**：脚本的每一步操作在 `runs/bench_log.md` 写两条中文记录：执行前一条「开始」（时间、步骤、命令、将执行的操作），执行后一条结果（状态、结果、问题与处理方案、耗时、明细路径）；批量跑模型时每个用例也各有一对。测试相关的同时写 `runs/<run_id>/run_log.md`。脚本异常退出或被 Ctrl-C 中断时会补写一条「异常/中断」结果，所以每条「开始」后面都有对应的结果；只有「开始」没有结果，说明进程被强杀（如 kill -9）。实现在 `common/benchlog.py`（Python 脚本用 `benchlog.Step`），常见错误识别表是其中的 `DIAGNOSES`。AI 自己的操作见下一节。**所有日志/运行输出都放 `runs/` 下，不要放进 `skills/`**（`skills/` 只放代码和固定配置，和运行产出混在一起会很乱）；`hcu-run-model` 单模型调试默认也写到 `runs/hcu-run-model/`，只有没给 `--site` 时才会退回 `skills/hcu-run-model/runs/`（没有别的地方可以参照）。
@@ -86,3 +86,4 @@ $L note --site $S --target "改 site.json 的 container.mounts" --since $T0 --st
 - 出问题先报告再处理；需要用户决定的先停下问：建/删/重建容器（`--yes`）、释放别人占用的卡、修改框架仓库脚本、确认测试列表（matrix.md）。cookbook 导出后只 `git diff` 给用户看，不自动提交或推送。
 - 占用状态会变，开始跑模型前重跑一次 idle。
 - 跑模型不顺时，先用 hcu-run-model 单个调通，再回到批量。
+- OOM 或显存峰值明显富余时，先跑 `python3 skills/hcu-run-model/scripts/tune_plan.py <run_dir>` 看建议；一次只改一项（切分/recompute/offload/mbs），用 1 iter 或 10 iters 验证。

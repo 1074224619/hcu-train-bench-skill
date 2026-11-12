@@ -11,6 +11,8 @@ export NCCL_NET_GDR_LEVEL=4
 export NCCL_NET_GDR_READ=1
 export RCCL_SDMA_COPY_ENABLE=0
 
+export NCCL_PXN_DISABLE=1
+
 # Project root computed from this file's own location (skills/common/env.sh),
 # so this works regardless of where the project is checked out.
 _env_sh_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -33,6 +35,7 @@ if [ -d "${_bridge_root}" ]; then
   unset _bridge_recipes_init _bridge_recipes_dir
 fi
 unset _env_sh_root _bridge_root
+echo $PYTHONPATH
 
 # These variables should be modified according to the environment of the machine you are using.
 # Auto-detect the IB HCA family and pick the matching profile. Force a specific
@@ -109,7 +112,8 @@ case "$IB_TYPE" in
       fi
       unset _detected_hca
     fi
-    export NCCL_IB_HCA
+    export UCX_NET_DEVICES=${NCCL_IB_HCA}
+    # echo $NCCL_IB_HCA
     # export ROCSHMEM_ALLOWED_IBV_DEVICES=mlx5_2,mlx5_3,mlx5_4,mlx5_5,mlx5_6,mlx5_7,mlx5_8,mlx5_9
     ;;
   shca)

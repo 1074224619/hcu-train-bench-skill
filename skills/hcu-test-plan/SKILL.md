@@ -33,6 +33,24 @@ python3 $K/scripts/scan_examples.py frameworks -o $K/catalog.json --site $R/site
 
 `site.json` 可选字段 `frameworks_enabled`（如 `["megatron-lm"]`）限制现阶段只跑哪些框架；不写这个字段 = 三个框架都不限制。不在列表里的框架，`scan_examples.py` 会把它的用例标成 `enabled: false`（notes 写明原因），`build_matrix.py` 对同一限制再过滤一遍（即使拿到一份没按这份 site.json 扫描过的 `catalog.json` 也不会漏过滤）。要开 bridge/swift 时把名字加进数组即可：已有 `catalog.json` 直接重新 `build_matrix.py` 就会放开，不用重新 `scan_examples.py`。
 
+## 计算卡平台匹配（BW1000 / BW1100）
+
+Megatron-bridge 的 recipe 名字带平台（如 `qwen35_vl_9b_pretrain_8gpu_bw1100_bf16_config` 和 `..._bw1000_...`），两个变体的并行默认值和通信后端不同（BW1100 用 DeepEP，因为该容器没装 HybridEP），不能混着跑。扫描前先确认节点实际卡型：
+
+```bash
+ssh <节点> 'PATH=/opt/hyhal/bin:$PATH; hy-smi --showproductname'   # 例：Card Series: BW1101
+ssh <节点> 'PATH=/opt/hyhal/bin:$PATH; hy-smi --showmeminfo vram'  # 147440 MiB ≈ 144G，属 BW1100 平台
+```
+
+把目标平台写进 `site.json` 的 `platform`（如 `BW1100`）：
+
+- `scan_examples.py` 给 bridge 用例记录 `platform` 字段，和 `site.json platform` 不一致的标成 `enabled: false`（`notes` 写原因，另有 `platform_disabled: true`），扫描日志里也会提示。
+- `build_matrix.py` 对旧 `catalog.json` 再用 recipe/id 里的平台匹配一次，所以不重新扫描也不会把不匹配的变体排进 matrix；目标平台一致时会把 scan 阶段按其他平台关掉的用例重新打开。
+- 覆盖目标平台：`--platform BW1100` / `--platform BW1000`；`--platform any` = 不过滤（适合故意生成跨平台列表）。
+- 混合卡集群：按平台分别准备 `site.json`/`hostfile`，各生成一份 matrix，不要把 bw1000 和 bw1100 用例排进同一批。
+
+不要按卡系列字面自动映射到 recipe：例如 bridge 文档里 GLM 在新卡上仍指定 `bw1000` recipe。`site.json platform` 是唯一权威目标；拿不准时先按该平台跑 `MODE=dryrun`，能解析配置再排批量。
+
 ## 数据集/模型路径（site.json 的 models）
 
 `site.json` 的 `models.<model>` 是按 catalog 的 model 名（全小写，见 `scan_examples.py` 的命名规则，如 `train_qwen3_8B.sh` -> `qwen3_8b`）预先填好的数据集/模型/tokenizer 路径，字段见 `common/site.example.json` 的示例：

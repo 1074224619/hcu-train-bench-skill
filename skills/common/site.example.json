@@ -1,18 +1,19 @@
 {
   "_comment": "Copy to <runs_dir>/site.json and fill in. All paths must be visible at the same absolute path on login node, hosts and inside containers.",
-  "frameworks_root": "/path/to/hcu-train-bench-skill/frameworks",
-  "runs_dir": "/path/to/hcu-train-bench-skill/runs",
+  "frameworks_root": "/path/to/Projects/hcu-train-bench-skill/frameworks",
+  "runs_dir": "/path/to/Projects/hcu-train-bench-skill/runs",
   "frameworks_enabled": [
     "megatron-bridge",
     "megatron-lm"
   ],
   "_frameworks_enabled_comment": "当前阶段只跑哪些框架的模型，取值是 megatron-lm / megatron-bridge / ms-swift 的子集。scan_examples.py 会把不在列表里的框架的用例标成 enabled=false（notes 里写明原因）；build_matrix.py 对同一限制再把关一次（即使拿到一份没按这份 site.json 扫描过的 catalog.json 也不会漏过滤）。不写这个字段 = 不限制，三个框架都正常跑。要开 bridge/swift 时把名字加进数组即可，不用重新扫描（build_matrix.py 下一次生成列表就会放开）。",
-  "hostfile": "/path/to/hcu-train-bench-skill/runs/hostfile",
+  "hostfile": "/path/to/Projects/hcu-train-bench-skill/runs/hostfile",
   "gpus_per_node": 8,
   "platform": "BW1100",
-  "env_script": "/path/to/hcu-train-bench-skill/skills/common/env.sh",
+  "_platform_comment": "本集群节点 10.0.8.137 / 10.0.8.35 的 hy-smi --showproductname 为 BW1101、显存 147440 MiB（≈144G），按 BW1100 平台处理。scan_examples.py / build_matrix.py 只会保留 recipe 平台为 bw1100 的 bridge 用例；--platform 可临时覆盖（any=不过滤）。",
+  "env_script": "/path/to/Projects/hcu-train-bench-skill/skills/common/env.sh",
   "_env_script_comment": "集群环境脚本（库路径、IB/RCCL 等环境变量），不同集群按需修改。check、rccl 在容器内先 source 它；所在目录会以只读方式挂进容器（同路径）。",
-  "rccl_baseline": "/path/to/hcu-train-bench-skill/skills/common/rccl_baseline",
+  "rccl_baseline": "/path/to/Projects/hcu-train-bench-skill/skills/common/rccl_baseline",
   "_rccl_baseline_comment": "RCCL 性能基线文件",
   "ssh_dir": "/root/.ssh/",
   "_ssh_dir_comment": "可选。create/recreate 建好容器后，把该宿主机目录的内容 docker cp 进容器 /root/.ssh 并 chown 成 root（不是挂载；有些集群本身就禁止挂载 /root/.ssh），默认 /root/.ssh。默认值要求每个节点宿主机的 /root/.ssh 都已放好同一套密钥对且公钥在 authorized_keys 里；若不想逐节点配置 root 密钥，可改成一个共享目录（如 NFS 共享 home 下的 .ssh），里面放一套所有节点通用的密钥对和 authorized_keys，且该路径要在每个节点宿主机上都是同一绝对路径。",
@@ -21,204 +22,236 @@
     "image": "10.16.1.152:5000/jenkins/model_test_env/megatron:0.19.2-ubuntu22.04-dtk2610-py3.12-1009",
     "ssh_port": 25951,
     "mounts": [
-      "/path:/path"
+      "/path/to/:/path/to/"
     ]
   },
   "launch_via": "docker-exec",
   "max_iters": 20,
   "warmup_iters": 5,
   "case_timeout_min": 60,
-  "cookbook_root": "/path/to/hcu-train-bench-skill/frameworks/dcu-train-cookbook",
+  "cookbook_root": "/path/to/Projects/hcu-train-bench-skill/frameworks/dcu-train-cookbook",
   "models": {
     "_comment": "按 catalog.json 的 case model 名（全小写，见 scan_examples.py 的命名规则，如 train_qwen3_8B.sh -> qwen3_8b）手动填写，比笼统的根目录自动猜测更精确。字段：data_path、tokenizer_path（Megatron-LM）、model_path（bridge / ms-swift）；对应目录必须在 container.mounts 内。hcu-test-plan 的 build_matrix.py 会把这里填的 data_path/tokenizer_path/model_path 按框架注入每个用例的 env（Megatron-LM: DATA_PATH/TOKENIZER_MODEL_PATH；Megatron-bridge: DATA_PATH/LOCAL_HF_PATH），不用再手改各框架的 run_*.sh。下面列全了 Megatron-LM-das/examples 下的全部模型（含新增的 qwen1.5_7b、qwen2_0.5b/1.5b/7b/72b、qwen25_0.5b/1.5b/3b/7b/14b/32b train 脚本，2026-10-30 参照 modules/qwen1.5、modules/qwen2、modules/qwen2.5 的 config.json 补齐）：qwen3_* 覆盖除 235B 外的全部 train_*.sh（0.6b/1.7b/4b/8b/14b/32b 是 dense，30b_a3b/30b_a3b_ultraep 是同一个 MoE checkpoint 换 EP 并行实现）；llama2/llama3/mixtral/qwen1.5/qwen2/qwen2.5 这几族本机只有部分规格的真实权重（如 llama2-7b、llama3.1-8B），其余规格复用同族共享的 tokenizer（已验证同一家族各规格共用一套 tokenizer），data_path 则按 docs/getting-started.md 的方法用 tools/preprocess_data.py 把 oscar-en-10k.jsonl 用对应 tokenizer 重新分词生成——这些用例只做随机初始化的性能测试，不加载预训练权重，所以没有真实大模型权重也能跑；Qwen1.5/Qwen2/Qwen2.5 家族内部按词表大小分两档（0.5b/1.5b/3b/7b 以下用 151936 小词表，7b 及以上大多用 152064 大词表，具体以各 modules/<model>/config.json 的 vocab_size 为准），两档词表不能共用同一份预分词数据集，小词表那几个（qwen1.5_7b、qwen2_0.5b/1.5b、qwen25_0.5b/1.5b/3b）本机还没有对应数据集（2026-10-30 预处理时赶上集群 GPU 临时不可用，没跑成，留空占位，见 QA.md），其余已用对应大/小词表数据集填好；glm5_300b/deepseekv3_671b/gpt_567b/aibenchmark 这4个本机确实没有对应数据集/权重也没有能复用的同族 tokenizer，data_path/tokenizer_path 留空占位——留空时 build_matrix.py 不会把它从 disabled 提到 enabled（inject_model_paths() 只在两个字段都非空时才注入/启用），即使忘了填也不会被当成真实路径误跑；下载好真实数据/权重后把对应字段填上，下次 build_matrix.py 就会自动启用。235B 本机没有对应 checkpoint 目录，且需要 16 节点，没配。",
     "qwen3_0.6b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-0.6b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-0.6b"
     },
     "qwen3_1.7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-1.7b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-1.7b"
     },
     "qwen3_4b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-4b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-4b"
     },
     "qwen3_8b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-8b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-8b",
       "_comment": "Megatron-LM 字段：data_path 是数据前缀（不带 .bin/.idx），tokenizer_path 是本地 HF 目录。已在本机验证可跑通（见 QA.md）。"
     },
     "qwen3_14b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-14b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-14b"
     },
     "qwen3_32b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-32b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-32b"
     },
     "qwen3_30b_a3b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-30b-a3b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-30b-a3b"
     },
     "qwen3_30b_a3b_ultraep": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen3_text_document",
-      "tokenizer_path": "/path/to/qwen3/qwen3-30b-a3b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-30b-a3b",
       "_comment": "和 qwen3_30b_a3b 是同一个 checkpoint，train_qwen3_30B_A3B_ultraep.sh 只是换了 EP 并行实现（ultra_ep）；本机镜像缺 ultra_ep 模块时会 ImportError，见 QA.md。"
     },
     "llama2_7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama2_text_document",
-      "tokenizer_path": "/path/to/llama2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama2-7b",
       "_comment": "本机实际存在的目录（之前这里的路径名拼错，指向不存在的目录，会被 build_matrix.py 误判成已配置、实际跑时才报 No such file；已核对 .bin/.idx 和 tokenizer.json 都在）。"
     },
     "llama2_13b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama2_text_document",
-      "tokenizer_path": "/path/to/llama2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama2-7b",
       "_comment": "本机没有 Llama2-13B 自己的权重目录，复用 llama2-7b 的 tokenizer（Llama2 全系列共用同一套 tokenizer，官方确认过），数据集和 llama2_7b 共用同一份；这里只是随机初始化做性能测试，不加载预训练权重。"
     },
     "llama2_70b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama2_text_document",
-      "tokenizer_path": "/path/to/llama2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama2-7b",
       "_comment": "同 llama2_13b，复用 llama2-7b 的 tokenizer 和数据集。"
     },
     "llama3_8b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama3_text_document",
-      "tokenizer_path": "/path/to/llama3.1-8B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama3.1-8B",
       "_comment": "本机只有 llama3.1-8B 的权重/tokenizer，Llama3 系列（3/3.1/3.2）共用同一套 tokenizer（128256 词表），复用它；data_path 按 docs/getting-started.md 的方法用 tools/preprocess_data.py 把 oscar-en-10k.jsonl 重新分词生成（oscar-en-10k-llama3_text_document），不是直接拿 llama3.2 那份数据硬套。"
     },
     "llama3_70b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama3_text_document",
-      "tokenizer_path": "/path/to/llama3.1-8B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama3.1-8B",
       "_comment": "同 llama3_8b，复用 llama3.1-8B 的 tokenizer；本机没有 70B 权重，仅用于性能测试。"
     },
     "llama3_405b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-llama3_text_document",
-      "tokenizer_path": "/path/to/llama3.1-8B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-llama3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/llama3.1-8B",
       "_comment": "同 llama3_8b；本机没有 405B 权重，且需要 32 节点。"
     },
     "mixtral_8x7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-mixtral8x7b_text_document",
-      "tokenizer_path": "/path/to/Mixtral/Mixtral-8x7B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-mixtral8x7b_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/Mixtral/Mixtral-8x7B",
       "_comment": "本机已有 Mixtral-8x7B 的 tokenizer 目录；data_path 同样用 preprocess_data.py 按这个 tokenizer 重新分词生成。"
     },
     "mixtral_8x22b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-mixtral8x22b_text_document",
-      "tokenizer_path": "/path/to/Mixtral/Mixtral-8x22B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-mixtral8x22b_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/Mixtral/Mixtral-8x22B",
       "_comment": "本机已有 Mixtral-8x22B 的 tokenizer 目录；data_path 同上用对应 tokenizer 重新分词生成。"
     },
     "qwen1.5_7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
-      "tokenizer_path": "/path/to/qwen1.5/qwen1.5-14b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen1.5/qwen1.5-14b",
       "_comment": "占位。qwen1.5-7b 的 tokenizer 词表（151936）比 14b/32b（152064）小一档，不能复用 oscar-en-10k-qwen1.5_text_document；需要用 preprocess_data.py 配 qwen1.5-7b 的 tokenizer 另外生成一份小词表数据集（2026-10-30 曾尝试生成，赶上集群 GPU 临时不可用没跑成，待 GPU 恢复后补跑，见 QA.md）。"
     },
     "qwen1.5_14b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
-      "tokenizer_path": "/path/to/qwen1.5/qwen1.5-14b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen1.5/qwen1.5-14b"
     },
     "qwen1.5_32b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
-      "tokenizer_path": "/path/to/qwen1.5/qwen1.5-32b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen1.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen1.5/qwen1.5-32b"
     },
     "qwen2_0.5b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2_text_document",
-      "tokenizer_path": "/path/to/qwen2/qwen2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2/qwen2-7b",
       "_comment": "占位。Qwen2-0.5B/1.5B 用 151936 小词表，和已有的 oscar-en-10k-qwen2_text_document（152064，给 7b/72b 用的）不兼容，需要另外用小词表 tokenizer 预处理一份（见 qwen1.5_7b 的说明，同一次 GPU 不可用没跑成）。"
     },
     "qwen2_1.5b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2_text_document",
-      "tokenizer_path": "/path/to/qwen2/qwen2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2/qwen2-7b",
       "_comment": "占位，同 qwen2_0.5b。"
     },
     "qwen2_7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2_text_document",
-      "tokenizer_path": "/path/to/qwen2/qwen2-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2/qwen2-7b",
       "_comment": "qwen2-7b/72b 都用 152064 大词表（和 qwen2.5-7b/14b/32b/72b、qwen1.5-14b/32b 同一词表体系），复用已生成的 oscar-en-10k-qwen2_text_document。"
     },
     "qwen2_72b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2_text_document",
-      "tokenizer_path": "/path/to/qwen2/qwen2-72b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2/qwen2-72b"
     },
     "qwen25_0.5b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-7b",
       "_comment": "占位。Qwen2.5-0.5B/1.5B/3B 用 151936 小词表，和已有的 oscar-en-10k-qwen2.5_text_document（152064，给 7b/14b/32b/72b 用的）不兼容，需要另外用小词表 tokenizer 预处理一份（同 qwen1.5_7b 的说明）。"
     },
     "qwen25_1.5b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-7b",
       "_comment": "占位，同 qwen25_0.5b。"
     },
     "qwen25_3b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-7b",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-7b",
       "_comment": "占位，同 qwen25_0.5b。"
     },
     "qwen25_7b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-7b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-7b"
     },
     "qwen25_14b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-14b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-14b"
     },
     "qwen25_32b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-32b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-32b"
     },
     "qwen25_72b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
-      "tokenizer_path": "/path/to/qwen2.5/qwen2.5-72b"
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen2.5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen2.5/qwen2.5-72b"
     },
     "glm5_300b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-glm5_text_document",
-      "tokenizer_path": "/path/to/glm/glm5",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-glm5_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/glm/glm5",
       "_comment": "占位，本机没有 GLM5-300B 权重/数据集，且需要 8 节点。"
     },
     "deepseekv3_671b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-deepseekv3_text_document",
-      "tokenizer_path": "/path/to/deepseek_v3",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-deepseekv3_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/deepseek_v3",
       "_comment": "占位，本机没有 DeepSeek-V3-671B 权重，且需要 64 节点。"
     },
     "gpt_567b": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-gptoss_text_document",
-      "tokenizer_path": "/path/to/gpt-oss/gpt-oss-20B-A3B",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-gptoss_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/gpt-oss/gpt-oss-20B-A3B",
       "_comment": "占位，内部 GPT-567B 配置，本机没有对应权重/数据集，且最大规格需要 128 节点。"
     },
     "aibenchmark": {
-      "data_path": "/path/to/oscar-en-10k/oscar-en-10k-aibench_text_document",
-      "tokenizer_path": "/path/to/aibench",
+      "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-aibench_text_document",
+      "tokenizer_path": "/path/to/Downloads/model_datasets/modules/aibench",
       "_comment": "占位，内部超大规模性能基准配置（最大规格需要 3584 节点），本机没有对应权重/数据集。"
     },
     "qwen35_text_0_8b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-0.8b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-0.8b",
       "_comment": "dense，TP1/PP1，单机 8 卡。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_2b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-2b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-2b",
       "_comment": "dense，TP1/PP1，单机 8 卡。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_4b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-4b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-4b",
       "_comment": "dense，TP2/PP1，单机 8 卡。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_9b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-9b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-9b",
       "_comment": "dense，TP2/PP1，单机 8 卡。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_27b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-27b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-27b",
       "_comment": "dense，TP4/PP2，单机 8 卡。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_35b_a3b": {
-      "model_path": "/path/to/qwen3.5/Qwen3.5-35B-A3B",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/Qwen3.5-35B-A3B",
       "_comment": "MoE，TP1/PP4/EP8，4 节点。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
     "qwen35_text_122b_a10b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-122b-a10b",
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-122b-a10b",
       "_comment": "MoE，TP4/PP2/EP4，4 节点。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
     },
-    "qwen35_text_397b_a17b": {
-      "model_path": "/path/to/qwen3.5/qwen3.5-397b-a17b",
-      "_comment": "MoE，TP4/PP4/EP8，64 卡（8 节点）；bw1000 与 bw1100 共用这一条路径。Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH；pretrain 默认用 mock 数据不需要 data_path，sft 才需要（见 hcu-run-model/SKILL.md 的 Megatron-bridge-das 一节）。"
+    "qwen35_vl_2b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-2b",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen35_vl_4b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-4b",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen35_vl_9b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-9b",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen35_vl_27b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-27b",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen35_vl_35b_a3b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/Qwen3.5-35B-A3B",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen35_vl_122b_a10b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-122b-a10b",
+      "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "minimax_m3_test": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/MiniMax-M3",
+      "_comment": "Megatron-bridge 条目：model_path 对应 LOCAL_HF_PATH，由 HCU patch 层在 AutoBridge.from_hf_pretrained 处重定向（recipe 里写的是 hub id MiniMaxAI/MiniMax-M3）。键名带 _test 后缀是因为 recipe 名 minimax_m3_pretrain_16gpu_bw1100_bf16_test_config 含 _test_，scan_examples.py 生成的 case model 名会加上该后缀，build_matrix.py 按这个键注入 LOCAL_HF_PATH。pretrain 用 mock 数据，不需要 data_path；注意本目录只有 config/tokenizer（没有 safetensors），load_weights=False 的 pretrain 够用。"
+    },
+    "minimax_m3": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/MiniMax-M3",
+      "_comment": "Megatron-bridge 条目：完整 60 层模型 recipe minimax_m3_pretrain_16gpu_bw1100_bf16_config（名字不含 _test_，scan_examples.py 生成的 case model 名就是 minimax_m3）的 LOCAL_HF_PATH。pretrain 用 mock 数据不需要 data_path；目录只有 config/tokenizer（没有 safetensors），load_weights=False 的 pretrain 够用。2 层 test 版见 minimax_m3_test。"
+    },
+    "minimax_m3_10layer_test": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/MiniMax-M3",
+      "_comment": "Megatron-bridge 条目：10 层 test recipe minimax_m3_10layer_pretrain_16gpu_bw1100_bf16_test_config（层数放在模型名段，case model 名是 minimax_m3_10layer_test，避免和 2 层 test 版的 case id 冲突）的 LOCAL_HF_PATH。pretrain 用 mock 数据，不需要 data_path；目录只有 config/tokenizer，load_weights=False 够用。"
     }
   }
 }

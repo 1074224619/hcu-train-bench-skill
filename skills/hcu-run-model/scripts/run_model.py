@@ -45,11 +45,41 @@ HINTS = [  # (正则, 可能原因)
     (r"No such container|is not running", "容器不存在或未运行"),
     (r"No such file or directory|FileNotFoundError|not found", "路径不存在：数据集/模型/tokenizer/env 脚本路径写死或不在挂载内"),
     (r"/path/to/", "脚本里还是占位路径 /path/to/..."),
-    (r"out of memory|OutOfMemoryError", "显存不足 (OOM)：调大 tp/pp、减小 mbs、开 recompute"),
     (r"ModuleNotFoundError", "容器缺少 Python 包"),
     (r"NCCL error|RCCL|nccl\w*Error|collective operation timeout", "集合通信失败/超时"),
     (r"[Aa]ddress already in use", "端口被占用：换 MASTER_PORT/PORT 或清理残留进程"),
 ]
+OOM_RE = re.compile(r"out of memory|OutOfMemoryError", re.I)
+# OOM 的处理方案取决于堆栈位置：recompute 只省激活值，参数/梯度/优化器状态放不下时无效。
+OOM_CONTEXTS = [
+    (re.compile(r"get_grad_norm|optimizer\.step|clip_grads|grad_norm", re.I), "optimizer"),
+    (re.compile(r"ParamAndGradBuffer|grad(?:ient)?[ _]buffer|\bDDP\b|distributed[^\n]*grad", re.I), "ddp"),
+    (re.compile(r"activation|TransformerLayer|\battention\b|\bmlp\b|\bbackward\b|\bforward\b", re.I), "activation"),
+]
+OOM_HINTS = {
+    "optimizer": "显存不足 (OOM)：优化器更新/梯度裁剪阶段，瓶颈是参数+梯度+优化器状态"
+                 "——优先优化器 offload/分布式优化器、加大 pp/ep/tp 或减少层数，recompute 通常无效",
+    "ddp": "显存不足 (OOM)：DDP 梯度缓冲阶段——优先加大切分/分布式优化器，recompute 帮助有限",
+    "activation": "显存不足 (OOM)：激活值阶段——优先 recompute/activation offload，再考虑减小 mbs 或加大切分",
+    "": "显存不足 (OOM)：按堆栈判断，优化器阶段用 offload+切分，激活阶段用 recompute",
+}
+
+
+def classify_oom(text):
+    """Return the OOM hint matching the stack context around the last OOM."""
+    matches = list(OOM_RE.finditer(text))
+    if not matches:
+        return ""
+    # 堆栈可能出现在 OOM 行之后很远（torch flight recorder），按 “File ... line N”
+    # 收集所有栈帧再分类，避免配置 dump 干扰。
+    frames = [l for l in text.splitlines() if re.search(r'File "[^"]+", line \d+', l)]
+    ctx = "\n".join(frames) or text[-8000:]
+    for rx, kind in OOM_CONTEXTS:
+        if rx.search(ctx):
+            return OOM_HINTS[kind]
+    return OOM_HINTS[""]
+
+
 STATE_ZH = {"done": "成功", "failed": "失败", "timeout": "超时", "stopped": "中断"}
 
 
@@ -190,9 +220,14 @@ def write_result(a, out, st):
     if st["state"] != "done":
         text = "\n".join(tail)
         hints = [h for rx, h in HINTS if re.search(rx, text)]
+        oom = classify_oom(text)
+        if oom:
+            hints.insert(0, oom)
         errs = [l for l in tail if re.search(r"(?i)error|exception|failed|denied|killed|Traceback", l)][-8:]
         problem = "可能原因：" + ("；".join(hints) if hints else "未识别，看下面的报错行和 train.log")
         lines += ["## 问题", "", problem, "", "末尾报错行：", "", "```", *(errs or tail[-15:]), "```"]
+    tune = Path(abspath_literal(sys.argv[0])).parent / "tune_plan.py"
+    lines += ["", f"调优建议：运行 `python3 {tune} {out}`（按显存峰值和 OOM 位置给出下一步参数）。"]
     (out / "result.md").write_text("\n".join(lines) + "\n")
     print("\n" + "\n".join(lines))
     return summary, problem

@@ -20,6 +20,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 import benchlog
 from common import load_json, read_hosts, save_json, abspath_literal
 
+PLATFORM_RE = re.compile(r"(?:^|[_\-])(bw\d{4}|gb\d{3})(?=[_\-]|$)")
+
+
+def normalize_platform(value):
+    """Lowercase and drop separators so BW1100 / bw-1100 compare equal."""
+    return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+
+
+def case_platform(c):
+    """Platform token of a case: explicit catalog field, else recipe/id."""
+    if c.get("platform"):
+        return str(c["platform"])
+    text = " ".join(str(c.get(k) or "") for k in ("recipe", "id"))
+    m = PLATFORM_RE.search(text)
+    return m.group(1) if m else ""
+
 
 def inject_model_paths(c, site):
     """Fill a case's env from site.json's `models.<model>` preset: DATA_PATH /
@@ -157,15 +173,19 @@ def main():
     ap.add_argument("--hosts", type=Path, help="healthy hosts (default: site hostfile)")
     ap.add_argument("--only", help="regex on case id")
     ap.add_argument("--max-nodes", type=int, help="cap nodes per case")
+    ap.add_argument("--platform", help="目标计算卡平台（如 BW1100）；默认取 site.json 的 platform；any = 不过滤")
     ap.add_argument("-o", "--run-dir", type=Path)
     a = ap.parse_args()
 
     site = load_json(a.site)
     run_id = time.strftime("%Y%m%d-%H%M%S")
     run_dir = abspath_literal(a.run_dir or Path(site["runs_dir"]) / run_id)
+    target_platform = a.platform or site.get("platform")
     plan = [f"读取用例目录 {a.catalog} 和可用节点 {a.hosts or site['hostfile']}",
             "保留已启用且节点数不超过可用节点的用例" + (f"（只要 id 匹配 `{a.only}`）" if a.only else "")
             + (f"，每个用例最多 {a.max_nodes} 节点" if a.max_nodes else ""),
+            (f"只保留 bridge recipe 平台与 {target_platform} 匹配的用例" if target_platform and normalize_platform(target_platform) != "any"
+             else "不按计算卡平台过滤（--platform any 或未配置 platform）"),
             "按节点数降序装箱成 wave（同一 wave 内节点互不重叠）",
             f"写 {run_dir / 'matrix.json'} 和 matrix.md"]
     with benchlog.Step(site["runs_dir"], "matrix", plan, run_dir=run_dir) as st:
@@ -180,12 +200,28 @@ def build(a, site, run_dir, st):
 
     keep, skipped = [], []
     allowed_fw = site.get("frameworks_enabled")
+    target_platform = a.platform or site.get("platform")
+    filter_platform = bool(target_platform) and normalize_platform(target_platform) != "any"
     for c in catalog["cases"]:
         if a.only and not re.search(a.only, c["id"]):
             continue
         if allowed_fw is not None and c["framework"] not in allowed_fw:
             skipped.append((c["id"], f"framework disabled: {c['framework']} not in site.json frameworks_enabled"))
             continue
+        c_platform = case_platform(c)
+        # A catalog scanned for another platform may have this case disabled by
+        # the platform filter; re-enable it when it matches this build's target
+        # (or when --platform any asks for no filtering at all).
+        if (not c.get("enabled") and c.get("platform_disabled")
+                and (not filter_platform or normalize_platform(c_platform) == normalize_platform(target_platform))):
+            c = dict(c)
+            c["enabled"] = True
+            c.pop("platform_disabled", None)
+            c["notes"] = [n for n in c.get("notes", []) if "平台不匹配" not in n]
+        if filter_platform:
+            if c_platform and normalize_platform(c_platform) != normalize_platform(target_platform):
+                skipped.append((c["id"], f"platform mismatch: recipe/id 平台 {c_platform}，目标 {target_platform}（--platform 可覆盖）"))
+                continue
         c = inject_model_paths(dict(c), site)
         if not c.get("enabled"):
             skipped.append((c["id"], "disabled: " + "; ".join(c.get("notes", []))))
@@ -219,7 +255,7 @@ def build(a, site, run_dir, st):
 
     matrix = {
         "meta": {"run_id": run_dir.name, "site": str(abspath_literal(a.site)), "catalog": str(abspath_literal(a.catalog)),
-                 "hosts_total": len(hosts), "gpus_per_node": gpn, "platform": site["platform"]},
+                 "hosts_total": len(hosts), "gpus_per_node": gpn, "platform": target_platform or site.get("platform", "")},
         "cases": cases,
     }
     save_json(run_dir / "matrix.json", matrix)

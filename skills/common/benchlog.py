@@ -59,8 +59,6 @@ DIAGNOSES = [
     (r"/path/to/\S*", "脚本里仍是占位路径 `{m}`", "在 site.json 填写该模型的数据集/模型路径"),
     (r"model directory not found: (\S+)", "模型目录不存在 `{0}`",
      "检查 site.json 的模型路径，并确认它在 `container.mounts` 内"),
-    (r"(?:CUDA|HIP|hip) out of memory|OutOfMemoryError", "显存不足 (OOM)",
-     "增大 tp/pp、减小 mbs 或开 recompute，或改跑卡数更多的用例"),
     (r"ModuleNotFoundError: No module named '([^']+)'", "容器缺少 Python 包 `{0}`",
      "在镜像中安装该包，或换用包含它的镜像"),
     (r"nccl(?:Internal|System|Unhandled|Remote)Error|NCCL error|RCCL error", "集合通信 (RCCL) 失败",
@@ -87,9 +85,66 @@ def short(line, n=160):
     return line if len(line) <= n else line[:n] + "…"
 
 
+OOM_RE = re.compile(r"out of memory|OutOfMemoryError", re.I)
+# Where the OOM happened decides what actually helps. Recomputation only frees
+# activations; when parameters/gradients/optimizer state don't fit, it is
+# useless (measured: a 20-layer MiniMax-M3 run still OOM'd in get_grad_norm
+# with full recompute, at a 2 MB NCCL calloc).
+OOM_CONTEXTS = [
+    (re.compile(r"get_grad_norm|optimizer\.step|clip_grads|grad_norm", re.I), "optimizer"),
+    (re.compile(r"ParamAndGradBuffer|grad(?:ient)?[ _]buffer|\bDDP\b|distributed[^\n]*grad", re.I), "ddp"),
+    (re.compile(r"activation|TransformerLayer|\battention\b|\bmlp\b|\bbackward\b|\bforward\b", re.I), "activation"),
+]
+OOM_DIAGNOSES = {
+    "optimizer": (
+        "显存不足 (OOM)：优化器更新/梯度裁剪阶段（optimizer.step / get_grad_norm）",
+        "瓶颈是参数+梯度+优化器状态，只在激活上省显存的 recompute 通常无效：优先优化器 offload"
+        "（Megatron-LM `--optimizer-cpu-offload --optimizer-offload-fraction`；bridge "
+        "`cfg.optimizer.optimizer_cpu_offload=true`）+ 分布式优化器，或增大 pp/ep/tp 切分、减少层数"
+        "（实测 20 层 MiniMax-M3 full recompute 仍在此 OOM）"),
+    "ddp": (
+        "显存不足 (OOM)：DDP 梯度缓冲分配/通信阶段",
+        "梯度缓冲大小由参数量决定，recompute 帮助有限：增大 pp/ep/tp 切分、开分布式优化器，"
+        "必要时减少层数或少跑卡"),
+    "activation": (
+        "显存不足 (OOM)：激活值相关的前/反向计算",
+        "优先开 recompute（`recompute_granularity=selective/full`，MoE 可加 "
+        "`recompute_modules=['moe_act']`）或 activation offload；仍不够再减小 mbs、增大 pp/ep/tp 切分"),
+    "": (
+        "显存不足 (OOM)",
+        "先看 OOM 堆栈位置：优化器/DDP 阶段优先切分 + 优化器 offload，激活阶段优先 recompute/"
+        "activation offload；也可减小 mbs 或改跑更多卡。可用 tune_plan.py 按运行记录给出具体下一步"),
+}
+
+
+def _oom_context(text):
+    # Python tracebacks may print after the native OOM line (torch flight
+    # recorder) and can be hundreds of lines away, so collect stack frames
+    # instead of using a character window; config dumps can't pollute it.
+    frames = [l for l in text.splitlines() if re.search(r'File "[^"]+", line \d+', l)]
+    ctx = "\n".join(frames) or text[-8000:]
+    for rx, kind in OOM_CONTEXTS:
+        if rx.search(ctx):
+            return kind
+    return ""
+
+
+def _oom_diagnosis(text):
+    matches = list(OOM_RE.finditer(text))
+    if not matches:
+        return None
+    m = matches[-1]
+    prob, fix = OOM_DIAGNOSES[_oom_context(text)]
+    line = text[text.rfind("\n", 0, m.start()) + 1:].split("\n", 1)[0]
+    return prob, fix, short(line)
+
+
 def diagnose(text, host="<节点>"):
     """Returns (问题, 处理方案, 证据行) for the first matching pattern, or None."""
     text = strip_ansi(text)
+    d = _oom_diagnosis(text)
+    if d:
+        return d
     for rx, prob, fix in _DIAG:
         m = rx.search(text)
         if m:

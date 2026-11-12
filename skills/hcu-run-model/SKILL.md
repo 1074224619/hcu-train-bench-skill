@@ -11,7 +11,9 @@ when_to_use: 用户要单独跑/调试某个模型、某个框架的 example 脚
 ```
 skills/hcu-run-model/
 ├── SKILL.md
-└── scripts/run_model.py      启动 + 监控 + 到步数自动停 + 写结果（只依赖标准库）
+└── scripts/
+    ├── run_model.py          启动 + 监控 + 到步数自动停 + 写结果（只依赖标准库）
+    └── tune_plan.py          按运行记录/手工输入给显存调优建议（只读，只依赖标准库）
 ```
 
 日志/输出不放在 `skills/` 下面（避免和 skill 代码混在一起）：给了 `--site` 时默认写到 `<runs_dir>/hcu-run-model/<时间>_<脚本名>/`（`hostfile`、`cmd.txt`、`train.log`、`status.json`、`result.md`、`run_log.md`）；没给 `--site` 就没有别的地方可以参照，退回 `skills/hcu-run-model/runs/<时间>_<脚本名>/`。想自己指定目录用 `--out DIR`。批量跑（`run_cases.py`）的输出一直都在 `<run_dir>/`（hcu-test-plan 生成，同样在 `runs/` 下），不受这个影响。
@@ -40,7 +42,8 @@ $L exec --site $S --target "核对 qwen3 数据/tokenizer（bw67）" --plan "确
 4. **单节点跑**：先 1 个节点、`--max-iters 10`，看能否出现 iteration 行。
 5. **再多节点**：单节点通了再加节点，重点看端口和 ssh。
 6. **汇报**：读 `runs/<目录>/result.md`，报告状态、性能、问题和可能原因。
-7. **改动**：用户同意后改脚本、换路径、清理残留进程，每个改动前后各记一条（`--plan` 写用户的决定）。
+7. **调优**：OOM 或显存富余时跑 `tune_plan.py <运行目录>`，按建议一次改一项，再回到第 3 步验证。
+8. **改动**：用户同意后改脚本、换路径、清理残留进程，每个改动前后各记一条（`--plan` 写用户的决定）。
 
 ## 命令
 
@@ -61,6 +64,48 @@ python3 $R --hosts bw67 --launcher <launcher 绝对路径> --arg ... --env KEY=V
 - 输出实时打印，同时写 `train.log`；结束后写 `result.md`。
 - 跑的同时后台每 5 秒对 `--hosts` 里每个节点 `docker exec <容器> hy-smi --showmemuse --json` 一次，取各卡的最大值，训练结束后记下每个节点的显存占用峰值（百分比）：写进 `status.json` 的 `vram_peak_percent`，`result.md` 里也有一行「显存占用峰值（hy-smi --showmemuse）」。某个节点偶尔连不上或输出解析不出来，这一轮就不计入，不影响跑模型本身。
 - 执行前、执行后各写一条中文日志到输出目录的 `run_log.md`；给了 `--site` 时同时写 `runs/bench_log.md`（调试时都带上）。
+
+## 显存调试（OOM / 显存富余）
+
+先看证据，再改参数，一次只改一项：
+
+- `status.json` 的 `vram_peak_percent`：执行期间每个节点 `hy-smi --showmemuse` 的最大值。峰值低说明切分过细/重计算过多；接近 100% 说明确实吃满。
+- `train.log` 里 OOM 的堆栈：决定该往哪调。`result.md` 的「可能原因」会自动区分；也可以让工具按运行记录给建议（只读，不改配置）：
+
+```bash
+python3 skills/hcu-run-model/scripts/tune_plan.py runs/hcu-run-model/<运行目录>
+python3 skills/hcu-run-model/scripts/tune_plan.py --state failed --oom-at optimizer \
+    --vram-peak 97 --framework megatron-bridge
+```
+
+工具输出结论、按优先级排列的建议、bridge/Megatron-LM 参数入口和并行约束。
+
+| OOM 位置（堆栈关键字） | 说明 | 优先动作 |
+|---|---|---|
+| optimizer.step / get_grad_norm / clip_grads | 参数+梯度+优化器状态放不下；recompute 只省激活，通常无效 | 优化器 offload + 分布式优化器；加大 pp/tp/ep 或减少层数 |
+| ParamAndGradBuffer / DDP | 梯度缓冲随参数量增长 | 加大切分、分布式优化器；recompute 帮助有限 |
+| TransformerLayer / attention / mlp / backward | 激活值峰值 | selective→full recompute、activation offload；再减 mbs；最后加切分 |
+| 无堆栈，只有 `HIP failure: 'out of memory'` | 位置不明 | 先按参数类处理（切分+offload），再用 `--oom-at` 细化 |
+
+显存峰值对应的调整方向（多节点取最高值）：
+
+| 峰值 | 判断 | 动作 |
+|---|---|---|
+| <40% | 富余明显 | 关 recompute/activation offload；切分降一档（优先 pp，其次 ep，最后 tp）；GBS 不变时调大 mbs |
+| 40–55% | 有富余 | 先关 offload 或降一档切分，目标 55–75% |
+| 55–75% | 合适 | 保持；要提速优先调大 mbs |
+| 75–90% | 余量偏小 | 不要减切分；加 recompute/activation offload 或加一档切分 |
+| ≥90% | 接近上限 | 先加 recompute/offload 或切分，再跑长一点确认稳定 |
+
+参数入口（以 2026-11 读到的脚本为准；改框架脚本/recipe 前先让用户确认）：
+
+- **bridge**：launcher 环境变量 `TP/PP/EP/ETP/CP`（minimax 支持）；`qwen35_vl` 还支持 `MICRO_BATCH_SIZE/GLOBAL_BATCH_SIZE/SEQ_LENGTH`，并把 hostfile/nodes 之后的 `KEY=VALUE` 透传给 `run_recipe.py`；其他 launcher 的批次参数多数要改 recipe。
+- **bridge recipe 字段**：`cfg.model.recompute_granularity`、`cfg.model.recompute_modules`（如 `["moe_act"]`）、`cfg.model.fine_grained_activation_offloading` + `cfg.model.offload_modules`、`cfg.optimizer.optimizer_cpu_offload`、`cfg.ddp.use_distributed_optimizer`。
+- **Megatron-LM**：`TP/PP/CP/MBS/GBS/SEQ_LEN` 写死在 `train_*.sh`；recompute/offload 用 MCore 命令行参数，测试脚本里已有：`--recompute-granularity selective|full`、`--recompute-method block|uniform --recompute-num-layers N`、`--recompute-modules moe_act`、`--optimizer-cpu-offload --optimizer-offload-fraction 0.5`、`--use-distributed-optimizer`。
+
+并行约束：world = TP×PP×CP×DP；EP 整除 DP；TP 整除 attention head 数；PP 不超过层数；GBS 能被 MBS×DP 整除。
+
+实测参考：20 层 MiniMax-M3 开 full recompute 仍在 `optimizer.step → get_grad_norm` OOM（最后是 2 MB 的 NCCL calloc 失败，说明瓶颈是参数/梯度/优化器状态，不是激活值）；改成 10 层、PP2/EP8、关闭全部 recompute 后 20 步成功，峰值 43%/63%，中位数 18.1 s/iter、92.6 TFLOP/s/GPU。
 
 ## 各框架
 
@@ -126,7 +171,7 @@ ms-swift 目前**不能直接跑**：上面三处写死路径要用户先决定�
 | `Connection refused/timed out` 在 mpirun 阶段 | `plm_rsh_args` 端口和容器 sshd 端口（25901）不一致 |
 | `No such container` | 容器没建或没运行，回 hcu-node-prep 建容器 |
 | `No such file` / `/path/to/` | 路径写死、占位或不在挂载内 |
-| `out of memory` | 加大 tp/pp、减 mbs、开 recompute，或加节点；先看 `status.json`/`result.md` 的 `vram_peak_percent`（跑之前的峰值轮询），接近 100% 说明确实是显存吃满，不用再怀疑是别的报错 |
+| `out of memory` / `HIP failure: 'out of memory'` | 先按上面「显存调试」看 OOM 堆栈位置：优化器/DDP 阶段用优化器 offload+切分，激活阶段用 recompute/activation offload；不要一律加 recompute。`status.json`/`result.md` 的 `vram_peak_percent` 接近 100% 说明确实是显存吃满 |
 | 没有 iteration 行就退出 | 看 `train.log` 末尾，多为初始化（环境、路径、通信）失败 |
 
 `result.md` 会自动匹配这些模式写「可能原因」；匹配不到就贴末尾报错行。

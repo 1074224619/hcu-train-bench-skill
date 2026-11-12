@@ -72,6 +72,7 @@ vi runs/hostfile.all     # 每行一个节点名
 |---|---|
 | `container.name` / `image` / `ssh_port` | 测试容器名、镜像、容器内 sshd 端口 |
 | `container.mounts` | 挂进容器的目录，需覆盖 frameworks、runs、数据集、模型 |
+| `platform` | 目标计算卡平台（如 `BW1000` / `BW1100`）。bridge recipe 名里带平台，`scan_examples.py` 会把和它不一致的 recipe 标成 `enabled: false`，`build_matrix.py` 再按 recipe/id 复核；`--platform BW1100|BW1000|any` 可临时覆盖。先用 `hy-smi` 确认节点实际卡型（见「2. 测试计划」） |
 | `frameworks_enabled` | 现阶段只跑哪些框架（`megatron-lm`/`megatron-bridge`/`ms-swift` 的子集），不写 = 三个框架都不限制。改了之后不用重新 `scan_examples.py`，`build_matrix.py` 下次生成列表就生效 |
 | `env_script` | 集群环境脚本（库路径、IB/RCCL 变量），不同集群各自指定，默认 `skills/common/env.sh`。check、rccl 在容器内先 `source` 它；所在目录以只读方式同路径挂进容器，**改位置要重建容器**，只改内容不用。`NCCL_SOCKET_IFNAME`/`GLOO_SOCKET_IFNAME` 会自动探测每个节点自己的默认路由网卡（`/proc/net/route`，没有再退回 `route -n`），不用手动按节点改。Megatron-LM-das 的 `run_*.sh` 默认不会用它（退回框架自带 `requirements/env.sh`，没有网卡自动探测，在本集群会导致 NCCL 初始化报错），`build_matrix.py` 批量跑时已自动把它注入每个用例的 `NCCL_ENV`；单独用 `hcu-run-model` 调试要自己 `--env NCCL_ENV=<env_script>` 传。`build_matrix.py` 同时会给每个 megatron-lm 用例的 `DTK_ENV` 设默认值 `/opt/dtk/env.sh`（除 qwen3 外其余 launcher 的 `DTK_ENV` 默认是空字符串，`source` 会直接报错退出） |
 | `rccl_baseline` | np=8 的 RCCL busbw 性能基线文件，默认 `skills/common/rccl_baseline`。缺这个文件 `rccl` 步骤每个 collective 会在 prepare 阶段直接报错「未找到性能基准」；和 `env_script` 一样**改位置要重建容器**，只改内容不用 |
@@ -120,6 +121,7 @@ python3 $K/hcu-test-plan/scripts/build_matrix.py --site $R/site.json --catalog $
 
 - 扫描后人工审 `catalog.json`：`enabled`、`nodes`、`parallel`、`cookbook_doc`。有未配置路径的用例默认关闭，原因在 `notes`。重新扫描会覆盖 catalog，有人工改动先备份。
 - `build_matrix.py` 按节点数装箱成 wave，同一 wave 的用例占用不同节点并发。先检查 `runs/<run_id>/matrix.md`，再执行。
+- **计算卡平台**：`site.json` 的 `platform` 必须和节点实际卡型一致；bridge 的 bw1000/bw1100 recipe 并行默认值和通信后端不同，不能混跑。确认方法：`ssh <节点> 'PATH=/opt/hyhal/bin:$PATH; hy-smi --showproductname'`（如 BW1101 系列 + 147440 MiB 属 BW1100 平台）。扫描会记录并关闭不匹配的 recipe，构建时再复核；`--platform` 可覆盖（`any`=不过滤）。混合卡集群按平台各生成一份 matrix。
 
 ### 3. 跑模型
 
@@ -141,6 +143,22 @@ python3 $K/hcu-run-model/scripts/run_cases.py $R/<run_id> --wave 1    # 或 --ca
 Megatron-LM-das 的用例必须显式传 `NCCL_ENV=<site.json 的 env_script>`，不能用框架自带 `requirements/env.sh` 的默认值（会导致 NCCL 初始化报错，见「当前限制」）；走 `run_cases.py` 批量执行时由 `build_matrix.py` 自动注入，不用手传。单模型结果在 `runs/hcu-run-model/<时间>_<脚本名>/result.md`，含状态、性能和可能原因（日志统一放在 `runs/` 下，不放 `skills/` 里；没给 `--site` 时才会退回 `skills/hcu-run-model/runs/`）。三个框架接收数据集、模型路径和端口的方式不同，调试前先读 [hcu-run-model/SKILL.md](skills/hcu-run-model/SKILL.md) 的「各框架」一节。
 
 单模型调试和批量执行跑的同时都会每 5 秒对每个节点 `docker exec <容器> hy-smi --showmemuse --json` 一次，取各卡最大值，训练结束后把每个节点的显存占用峰值（百分比）写进 `status.json`/`status/<id>.json` 的 `vram_peak_percent`，单模型的 `result.md` 和批量的 `bench_log.md`/终端输出里也能看到。
+
+### 显存调试（OOM / 显存富余）
+
+先看 `status.json` 的 `vram_peak_percent` 和 `train.log` 里 OOM 的堆栈位置，再决定调什么；`result.md` 会自动区分。也可以让工具按运行记录给建议（只读，不改配置）：
+
+```bash
+python3 $K/hcu-run-model/scripts/tune_plan.py runs/hcu-run-model/<运行目录>
+python3 $K/hcu-run-model/scripts/tune_plan.py --state failed --oom-at optimizer --vram-peak 97 --framework megatron-bridge
+```
+
+- OOM 在 `optimizer.step/get_grad_norm`：瓶颈是参数+梯度+优化器状态，recompute 通常无效；优先优化器 offload（LM `--optimizer-cpu-offload --optimizer-offload-fraction 0.5`，bridge `cfg.optimizer.optimizer_cpu_offload=true`）+ 分布式优化器，或加大 pp/tp/ep、减少层数。
+- OOM 在 DDP 梯度缓冲：加大切分、开分布式优化器，recompute 帮助有限。
+- OOM 在 forward/backward/activation：先 selective→full recompute、activation offload，再减 mbs，最后加切分。
+- 峰值 <40%：可关 recompute/offload、切分降一档、GBS 不变时调大 mbs；40–55% 可小幅降；55–75% 保持；>75% 不要减切分，>90% 先加 recompute/offload 或切分。
+
+参数入口和并行约束见 [hcu-run-model/SKILL.md](skills/hcu-run-model/SKILL.md) 的「显存调试」一节。一次只改一项，先 1 iter 或 10 iters 对比 time/iter 和显存峰值。
 
 ### 4. 解析并写入 cookbook
 
@@ -199,6 +217,8 @@ Claude Code 的执行方式：
 - Megatron-LM-das 的 launcher 里 `DATA_PATH`、`TOKENIZER_MODEL_PATH`、`DTK_ENV`、`NCCL_ENV` 都是 `${VAR:-默认}` 可覆盖写法，但默认值不一定能直接用：`DATA_PATH`/`TOKENIZER_MODEL_PATH` 没有默认值的（除 qwen3）要在 `site.json` 的 `models.<model>` 填，见 `skills/hcu-test-plan/SKILL.md`；`NCCL_ENV` 的框架默认值（`requirements/env.sh`）在本集群会让 NCCL 初始化报 `ncclInternalError ... Attribute arch of node cpu not found`，必须显式覆盖成 `env_script`；`DTK_ENV` 除 qwen3 外其余 launcher 默认是空字符串，`source` 会直接报错退出，必须覆盖成实际的 dtk env 路径（如 `/opt/dtk/env.sh`）。`NCCL_ENV`/`DTK_ENV` 这两个 `build_matrix.py` 批量跑时都已自动注入，单独用 `hcu-run-model` 调试要自己 `--env` 传。mpirun ssh 端口和容器 sshd 端口（25901）不一致，多节点前要核对。
 - `examples/` 下的 train 脚本目前都临时注释掉了 `--save`/`--load`（不写/不读 checkpoint），只做性能测试，不占用磁盘保存权重；需要断点续训或保存权重时再手动放开。
 - Megatron-bridge-das 部分 recipe 的 `LOCAL_HF_PATH` 是 `/path/to/...` 占位；多节点要 `--env PORT=25901`。
-- 现阶段默认只跑 megatron-lm（`site.json` 的 `frameworks_enabled`），bridge/swift 稳定后再开。
+- 现阶段 `site.json` 的 `frameworks_enabled` 是 megatron-bridge + megatron-lm；ms-swift 稳定后再开。
 - 新模型如果在 cookbook 里还没有对应文档，要先按同目录模板建好，导出时才会写入。
+- Megatron-bridge 的 recipe 按平台分（bw1000/bw1100）：并行默认值和通信后端不同，用错会跑不起来或结果不可比。`site.json` 的 `platform` 必须和节点实际卡型一致，混合卡集群要按平台分开生成 matrix。bridge 各 launcher 可覆盖的参数也不一样：minimax 支持 TP/PP/EP/ETP/CP，qwen35_vl 还支持批次环境变量和尾部 `KEY=VALUE`，其他 launcher 多数要改 recipe。
+- Megatron-LM-das 的 `TP/PP/CP/MBS/GBS/SEQ_LEN` 写死在 `train_*.sh`，调切分或批次要改框架脚本，先和用户确认。
 - `rccl` 默认 `--skip-idle-check`，节点在 `idle` 之后变忙也会照跑，没有反向开关可以强制恢复这项检查；跑之前自己保证 `idle_hosts` 是新的。
