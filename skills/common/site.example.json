@@ -26,12 +26,12 @@
     ]
   },
   "launch_via": "docker-exec",
-  "max_iters": 20,
-  "warmup_iters": 5,
+  "max_iters": 10,
+  "warmup_iters": 3,
   "case_timeout_min": 60,
   "cookbook_root": "/path/to/Projects/hcu-train-bench-skill/frameworks/dcu-train-cookbook",
   "models": {
-    "_comment": "按 catalog.json 的 case model 名（全小写，见 scan_examples.py 的命名规则，如 train_qwen3_8B.sh -> qwen3_8b）手动填写，比笼统的根目录自动猜测更精确。字段：data_path、tokenizer_path（Megatron-LM）、model_path（bridge / ms-swift）；对应目录必须在 container.mounts 内。hcu-test-plan 的 build_matrix.py 会把这里填的 data_path/tokenizer_path/model_path 按框架注入每个用例的 env（Megatron-LM: DATA_PATH/TOKENIZER_MODEL_PATH；Megatron-bridge: DATA_PATH/LOCAL_HF_PATH），不用再手改各框架的 run_*.sh。下面列全了 Megatron-LM-das/examples 下的全部模型（含新增的 qwen1.5_7b、qwen2_0.5b/1.5b/7b/72b、qwen25_0.5b/1.5b/3b/7b/14b/32b train 脚本，2026-10-30 参照 modules/qwen1.5、modules/qwen2、modules/qwen2.5 的 config.json 补齐）：qwen3_* 覆盖除 235B 外的全部 train_*.sh（0.6b/1.7b/4b/8b/14b/32b 是 dense，30b_a3b/30b_a3b_ultraep 是同一个 MoE checkpoint 换 EP 并行实现）；llama2/llama3/mixtral/qwen1.5/qwen2/qwen2.5 这几族本机只有部分规格的真实权重（如 llama2-7b、llama3.1-8B），其余规格复用同族共享的 tokenizer（已验证同一家族各规格共用一套 tokenizer），data_path 则按 docs/getting-started.md 的方法用 tools/preprocess_data.py 把 oscar-en-10k.jsonl 用对应 tokenizer 重新分词生成——这些用例只做随机初始化的性能测试，不加载预训练权重，所以没有真实大模型权重也能跑；Qwen1.5/Qwen2/Qwen2.5 家族内部按词表大小分两档（0.5b/1.5b/3b/7b 以下用 151936 小词表，7b 及以上大多用 152064 大词表，具体以各 modules/<model>/config.json 的 vocab_size 为准），两档词表不能共用同一份预分词数据集，小词表那几个（qwen1.5_7b、qwen2_0.5b/1.5b、qwen25_0.5b/1.5b/3b）本机还没有对应数据集（2026-10-30 预处理时赶上集群 GPU 临时不可用，没跑成，留空占位，见 QA.md），其余已用对应大/小词表数据集填好；glm5_300b/deepseekv3_671b/gpt_567b/aibenchmark 这4个本机确实没有对应数据集/权重也没有能复用的同族 tokenizer，data_path/tokenizer_path 留空占位——留空时 build_matrix.py 不会把它从 disabled 提到 enabled（inject_model_paths() 只在两个字段都非空时才注入/启用），即使忘了填也不会被当成真实路径误跑；下载好真实数据/权重后把对应字段填上，下次 build_matrix.py 就会自动启用。235B 本机没有对应 checkpoint 目录，且需要 16 节点，没配。",
+    "_comment": "按 catalog.json 的 case model 名（全小写，见 scan_examples.py 的命名规则，如 train_qwen3_8B.sh -> qwen3_8b）手动填写，比笼统的根目录自动猜测更精确。字段：data_path、tokenizer_path（Megatron-LM）、model_path（bridge / ms-swift）；对应目录必须在 container.mounts 内。hcu-test-plan 的 build_matrix.py 会把这里填的 data_path/tokenizer_path/model_path 按框架注入每个用例的 env（Megatron-LM: DATA_PATH/TOKENIZER_MODEL_PATH；Megatron-bridge: DATA_PATH/LOCAL_HF_PATH），不用再手改各框架的 run_*.sh。下面列全了 Megatron-LM-das/examples 下的全部模型（含新增的 qwen1.5_7b、qwen2_0.5b/1.5b/7b/72b、qwen25_0.5b/1.5b/3b/7b/14b/32b train 脚本，2026-10-30 参照 modules/qwen1.5、modules/qwen2、modules/qwen2.5 的 config.json 补齐）：qwen3_* 覆盖除 235B 外的全部 train_*.sh（0.6b/1.7b/4b/8b/14b/32b 是 dense，30b_a3b/30b_a3b_ultraep 是同一个 MoE checkpoint 换 EP 并行实现）；llama2/llama3/mixtral/qwen1.5/qwen2/qwen2.5 这几族本机只有部分规格的真实权重（如 llama2-7b、llama3.1-8B），其余规格复用同族共享的 tokenizer（已验证同一家族各规格共用一套 tokenizer），data_path 则按 docs/getting-started.md 的方法用 tools/preprocess_data.py 把 oscar-en-10k.jsonl 用对应 tokenizer 重新分词生成——这些用例只做随机初始化的性能测试，不加载预训练权重，所以没有真实大模型权重也能跑；Qwen1.5/Qwen2/Qwen2.5 家族内部按词表大小分两档（0.5b/1.5b/3b/7b 以下用 151936 小词表，7b 及以上大多用 152064 大词表，具体以各 modules/<model>/config.json 的 vocab_size 为准），两档词表不能共用同一份预分词数据集，小词表那几个（qwen1.5_7b、qwen2_0.5b/1.5b、qwen25_0.5b/1.5b/3b）本机还没有对应数据集（2026-10-30 预处理时赶上集群 GPU 临时不可用，没跑成，留空占位，见 QA.md），其余已用对应大/小词表数据集填好；glm5_300b/deepseekv3_671b/gpt_567b/aibenchmark 这4个本机确实没有对应数据集/权重也没有能复用的同族 tokenizer，data_path/tokenizer_path 留空占位——留空时 build_matrix.py 不会把它从 disabled 提到 enabled（inject_model_paths() 只在两个字段都非空时才注入/启用），即使忘了填也不会被当成真实路径误跑；下载好真实数据/权重后把对应字段填上，下次 build_matrix.py 就会自动启用。235B 本机没有对应 checkpoint 目录，且需要 16 节点，没配。 另有 env（额外环境变量，如 SFT 的 {\"DATASET\": \"local-vlm\"}）和 extra_args（launcher 的 hostfile/nodes 之后的 KEY=VALUE 透传参数，如 dataset.source.load_kwargs.data_files.train=<jsonl>）两个可选字段，供 Megatron-bridge 用例注入本地数据集；hcu-test-plan 的 build_matrix.py 在 megatron-bridge 分支里把它们合并进用例的 env / args。",
     "qwen3_0.6b": {
       "data_path": "/path/to/Downloads/model_datasets/oscar-en-10k/oscar-en-10k-qwen3_text_document",
       "tokenizer_path": "/path/to/Downloads/model_datasets/modules/qwen3/qwen3-0.6b"
@@ -240,6 +240,102 @@
     "qwen35_vl_122b_a10b_mock": {
       "model_path": "/path/to/Downloads/model_datasets/modules/qwen3.5/qwen3.5-122b-a10b",
       "_comment": "VL mock 冒烟测试临时借用同尺寸 text 权重目录检查加载路径和拓扑；VL 专用权重未准备，真正的图文训练需要替换成含 preprocessor_config.json 等的完整 VL 目录。"
+    },
+    "qwen3_vl_8b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/Qwen3-VL-8B-Instruct",
+      "_comment": "Megatron-bridge Qwen3-VL mock 预训练：model_path 对应 LOCAL_HF_PATH，需要完整的 HF VL 目录（config.json + preprocessor_config.json + tokenizer）。pretrain 使用 mock 数据，不需要 data_path。"
+    },
+    "qwen3_vl_32b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/qwen3vl-32b",
+      "_comment": "Megatron-bridge Qwen3-VL mock 预训练：model_path 对应 LOCAL_HF_PATH，需要完整的 HF VL 目录（config.json + preprocessor_config.json + tokenizer）。pretrain 使用 mock 数据，不需要 data_path。"
+    },
+    "qwen3_vl_30b_a3b_mock": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/Qwen3-VL-30B-A3B-Instruct",
+      "_comment": "Megatron-bridge Qwen3-VL mock 预训练：model_path 对应 LOCAL_HF_PATH，需要完整的 HF VL 目录（config.json + preprocessor_config.json + tokenizer）。pretrain 使用 mock 数据，不需要 data_path。"
+    },
+    "qwen3_vl_8b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/Qwen3-VL-8B-Instruct",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen3-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen3_vl_32b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/qwen3vl-32b",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen3-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen3_vl_30b_a3b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen3vl/Qwen3-VL-30B-A3B-Instruct",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen3-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen25_vl_3b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen2.5vl/qwen2.5vl-3B",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen2.5-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen25_vl_7b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen2.5vl/Qwen2.5-VL-7B-Instruct",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen2.5-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen25_vl_32b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen2.5vl/qwen2.5vl-32b",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen2.5-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
+    },
+    "qwen25_vl_72b": {
+      "model_path": "/path/to/Downloads/model_datasets/modules/qwen2.5vl/qwen2.5vl-72b",
+      "env": {
+        "DATASET": "local-vlm"
+      },
+      "extra_args": [
+        "dataset.source.load_kwargs.data_files.train=/path/to/Downloads/model_datasets/cord-v1/sft/train.jsonl",
+        "dataset.validation_source.load_kwargs.data_files.validation=/path/to/Downloads/model_datasets/cord-v1/sft/validation.jsonl",
+        "dataset.test_source.load_kwargs.data_files.test=/path/to/Downloads/model_datasets/cord-v1/sft/test.jsonl"
+      ],
+      "_comment": "Megatron-bridge Qwen2.5-VL SFT：model_path 对应 LOCAL_HF_PATH（同时作为 PRETRAINED_CHECKPOINT 的默认值）；env 的 DATASET=local-vlm 选择本地图文 jsonl，extra_args 覆盖 dataset.source / validation_source / test_source 的 data_files 路径（对应文件都要在 container.mounts 内）。PRETRAINED_CHECKPOINT 可用 env 覆盖。"
     },
     "minimax_m3_test": {
       "model_path": "/path/to/Downloads/model_datasets/modules/MiniMax-M3",

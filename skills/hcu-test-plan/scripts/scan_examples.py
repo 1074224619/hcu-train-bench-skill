@@ -21,7 +21,7 @@ from common import FRAMEWORK_SHORT, abspath_literal, load_json, min_world_size, 
 
 ASSIGN_RE = r"^\s*{name}=\"?\$?\{{?(?:[A-Z_]+:-)?(\d+)\}}?\"?\s*(?:#.*)?$"
 COOKBOOK_DOCS = [
-    (r"^qwen1\.5", "Qwen-1.5.md"), (r"^qwen2(?!5)", "Qwen-2.md"), (r"^qwen25", "Qwen-2.md"),
+    (r"^qwen1\.5", "Qwen-1.5.md"), (r"^qwen2(?!5)", "Qwen-2.md"), (r"^qwen25_vl", "Qwen-2-VL.md"), (r"^qwen25", "Qwen-2.md"),
     (r"^qwen35_vl", "Qwen-3.5-VL.md"), (r"^qwen35", "Qwen-3.5.md"), (r"^qwen38", "Qwen-3.8.md"),
     (r"^qwen3_vl", "Qwen-3-VL.md"), (r"^qwen3", "Qwen-3.md"),
     (r"^llama", "Llama.md"), (r"^deepseekv4|^deepseek_v4", "DeepSeek-4.md"),
@@ -76,6 +76,48 @@ def recipe_case_parallels(text):
             if any(fnmatch.fnmatchcase(recipe, p) for p in patterns):
                 return triple
         return None
+
+    return lookup
+
+
+SIZE_BLOCK_RE = re.compile(r'case\s+"?\$\{?SIZE\}?"?\s+in\b(.*?)^\s*esac\b', re.M | re.S)
+SIZE_ARM_RE = re.compile(r"^\s*([0-9][a-z0-9_|]*)\)\s*(.*)$")
+
+
+def recipe_size_parallels(text):
+    """Map recipe name -> (tp, pp, ep) from a ``case "${SIZE}" in ... esac`` table.
+
+    Qwen VL launchers derive SIZE from the recipe name and pick TP/PP/EP
+    defaults from a SIZE table (examples/qwen/train_qwen3_vl_*.sh,
+    examples/qwen/train_qwen25_vl_sft.sh), so ``recipe_case_parallels`` -- which
+    looks for a ``case "$1" in`` table -- finds nothing. Arms look like
+    ``8b|3b)  TP_DEFAULT=1; PP_DEFAULT=1; EP_DEFAULT=1 ;;`` and the size of a
+    recipe is the token between the model family and _pretrain_/_sft_.
+    """
+    block = SIZE_BLOCK_RE.search(text)
+    if not block:
+        return None
+    arms = {}
+    for line in block.group(1).splitlines():
+        line = line.split("#", 1)[0].strip()
+        arm = SIZE_ARM_RE.match(line)
+        if not arm:
+            continue
+        vals = {}
+        for key in ("TP", "PP", "EP"):
+            m = re.search(rf"{key}_DEFAULT=(\d+)", arm.group(2))
+            if m:
+                vals[key.lower()] = int(m.group(1))
+        if len(vals) != 3:
+            continue
+        for pattern in arm.group(1).split("|"):
+            arms[pattern] = (vals["tp"], vals["pp"], vals["ep"])
+    if not arms:
+        return None
+
+    def lookup(recipe):
+        m = re.match(r".+?_([0-9][a-z0-9_]*?)_(?:pretrain|sft)_", recipe)
+        return arms.get(m.group(1)) if m else None
 
     return lookup
 
@@ -164,8 +206,12 @@ def scan_megatron_bridge(root, gpn):
             platform = re.search(r"_(\d+gpu)_([a-z][a-z0-9]*)_[a-z0-9_]*config$", recipe)
             platform = platform.group(2) if platform else ""
             notes = ["使用 mock 数据的 recipe"] if "mock" in recipe else []
+            # 各 launcher 接受的 MODE 不同：多数 pretrain 用 train，SFT 脚本多为 sft
+            # （deepseekv4_flash_sft 例外，仍用 train），按脚本自己的 usage 提示取。
+            mode_m = re.search(r"""Use ['"]?dryrun['"]? or ['"]?([a-z]+)""", text)
+            mode = mode_m.group(1) if mode_m else "train"
             par = parallel_of(text, grab)
-            lookup = recipe_case_parallels(text)
+            lookup = recipe_case_parallels(text) or recipe_size_parallels(text)
             if lookup:
                 triple = lookup(recipe)
                 if triple:
@@ -173,7 +219,7 @@ def scan_megatron_bridge(root, gpn):
                     notes = notes + [f"并行参数取自 recipe_parallel_defaults 的 case 分支（TP{par['tp']}/PP{par['pp']}/EP{par['ep']}）"]
             c = case(
                 "megatron-bridge", model + suffix, stage,
-                str(train.relative_to(root)), [recipe, "train", "{hostfile}", "{nodes}"],
+                str(train.relative_to(root)), [recipe, mode, "{hostfile}", "{nodes}"],
                 {"GPUS": "{gpus_per_node}", "PORT": "{ssh_port}"},
                 par, gpn, {"recipe": recipe, "seq_len": grab(text, "SEQ_LENGTH"), "platform": platform},
                 [], max(1, gpus // gpn))

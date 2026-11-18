@@ -104,7 +104,7 @@ def html_row(rec, stat, logname=None):
     return "\n".join([
         "    <tr>",
         f"      <td>{display_name(rec)}</td>",
-        "      " + tds(["", rec.get("precision") or "BF16", rec["nodes"], rec["gpus"]]),  # framework col left empty
+        "      " + tds([rec.get("framework"), rec.get("precision") or "BF16", rec["nodes"], rec["gpus"]]),
         "      " + tds([rec.get("mbs"), rec.get("gbs"), rec.get("seq_len")]),
         "      " + tds([rec.get("tp"), rec.get("cp"), dp, rec.get("pp"), rec.get("sp"), rec.get("vpp"),
                         rec.get("ep") if (rec.get("ep") or 1) > 1 else None, rec.get("etp") if (rec.get("ep") or 1) > 1 else None]),

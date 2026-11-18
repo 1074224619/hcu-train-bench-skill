@@ -108,6 +108,13 @@ def inject_model_paths(c, site):
             env["LOCAL_HF_PATH"] = preset["model_path"]
         if preset.get("data_path"):
             env["DATA_PATH"] = preset["data_path"]
+        # 预设里的额外环境变量（如 DATASET=local-vlm）与 launcher 尾部
+        # KEY=VALUE 参数（如 local-vlm 的 dataset.*.data_files.*）原样注入；
+        # bridge launcher 把 hostfile/nodes 之后的参数透传给 run_recipe.py。
+        env.update(preset.get("env") or {})
+        extra_args = preset.get("extra_args") or []
+        if extra_args:
+            c = dict(c, args=list(c.get("args", [])) + [str(a) for a in extra_args])
         c = dict(c, env=env)
     return c
 
