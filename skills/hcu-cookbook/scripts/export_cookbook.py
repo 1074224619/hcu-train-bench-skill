@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turn parsed results into dcu-train-cookbook perf-benchmarks rows.
+"""Turn parsed results into hcu-train-cookbook perf-benchmarks rows.
 
 Usage: export_cookbook.py <run_dir> [--apply] [--case ID] [--stat median|best]
 
@@ -81,10 +81,10 @@ def log_name(rec, disambiguate=False):
     par = "".join(f"{k}{rec[k]}" for k in ("tp", "pp", "ep", "cp") if rec.get(k))
     mbs = f"-mbs{rec['mbs']}" if rec.get("mbs") and rec["mbs"] != 1 else ""
     # Two platforms can produce the identical log name for one model (same
-    # dcu count / batch / parallel); only then tag the platform in, so the
+    # hcu count / batch / parallel); only then tag the platform in, so the
     # normal single-platform naming stays unchanged.
     plat = platform_suffix(rec) if disambiguate else ""
-    return (f"{display_name(rec)}-dcu{rec['gpus']}-b{rec['gbs']}-s{rec['seq_len']}{mbs}"
+    return (f"{display_name(rec)}-hcu{rec['gpus']}-b{rec['gbs']}-s{rec['seq_len']}{mbs}"
             f"-{par}{plat}-{FRAMEWORK_SHORT[rec['framework']]}.log")
 
 
@@ -232,7 +232,7 @@ def export(a, run_dir, platform, run_id, bench, st):
         by_doc.setdefault(doc, []).append(rec)
         csv_rows.append(csv_row(rec, run_id, plat, a.stat))
 
-    # Same model on two platforms + same dcu/batch/parallel => identical log file
+    # Same model on two platforms + same hcu/batch/parallel => identical log file
     # name. Only then tag the platform into the name; single-platform runs keep
     # the existing naming.
     def collision_names(items):

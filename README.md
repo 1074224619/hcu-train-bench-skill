@@ -1,6 +1,6 @@
 # BenchAgent
 
-在 HCU 集群上批量测试 Megatron-LM-das / Megatron-bridge-das / ms-swift 的训练性能，并把结果整理进 dcu-train-cookbook。
+在 HCU 集群上批量测试 Megatron-LM-das / Megatron-bridge-das / ms-swift 的训练性能，并把结果整理进 hcu-train-cookbook。
 
 流程分 4 步，每步由一个 skill 负责，步骤之间只通过 `runs/` 下的文件交接：
 
@@ -20,7 +20,7 @@ BenchAgent/
 ├── frameworks/                 被测框架和工具（各自是独立的 git 仓库）
 │   ├── Megatron-LM-das/  Megatron-bridge-das/  ms-swift/
 │   ├── cluster-manager-das/    节点筛查，使用其中的 hcu-envcheck
-│   └── dcu-train-cookbook/     性能数据最终写入这里
+│   └── hcu-train-cookbook/     性能数据最终写入这里
 ├── skills/                     脚本只依赖 Python 3 标准库
 │   ├── SKILL.md                主 skill hcu-bench：总流程、分工、共享约定
 │   ├── common/                 共享代码（common.py、benchlog.py）、site.example.json、env.sh
@@ -43,11 +43,11 @@ BenchAgent/
 
 | 目录 | 仓库 |
 |---|---|
-| Megatron-LM-das | git@github.com:1074224619/Megatron-LM-das.git |
-| Megatron-bridge-das | git@github.com:1074224619/Megatron-bridge-das.git |
-| ms-swift | git@github.com:1074224619/ms-swift-das.git |
-| cluster-manager-das | git@github.com:1074224619/cluster-manager-das.git |
-| dcu-train-cookbook | http://42.228.13.241:10068/dcutoolkit/deeplearing/dcu-train-cookbook.git |
+| Megatron-LM-das | https://github.com/HYGON-AI/Megatron-LM-das.git |
+| Megatron-bridge-das | https://github.com/HYGON-AI/Megatron-bridge-das.git |
+| ms-swift | https://github.com/1074224619/ms-swift-das.git |
+| cluster-manager-das | https://github.com/1074224619/cluster-manager-das.git |
+| hcu-train-cookbook | cookbook仓库 |
 
 新环境下 clone 到 `frameworks/` 下对应的目录名即可。
 
@@ -60,7 +60,7 @@ BenchAgent/
 ## 配置（首次）
 
 ```bash
-cd /path/to/BenchAgent     # 项目根目录
+cd /path/to/hcu-train-bench-skill     # 项目根目录
 cp skills/common/site.example.json runs/site.json
 vi runs/site.json        # 镜像、容器名、ssh 端口、挂载、平台、每节点卡数、env_script、框架和 cookbook 路径
 vi runs/hostfile.all     # 每行一个节点名
@@ -166,7 +166,7 @@ python3 $K/hcu-run-model/scripts/tune_plan.py --state failed --oom-at optimizer 
 python3 $K/hcu-cookbook/scripts/parse_metrics.py $R/<run_id> [--warmup 5]
 python3 $K/hcu-cookbook/scripts/export_cookbook.py $R/<run_id>            # 预览，写到 <run_id>/cookbook/
 python3 $K/hcu-cookbook/scripts/export_cookbook.py $R/<run_id> --apply    # 写入 cookbook 工作区
-cd frameworks/dcu-train-cookbook && git diff                              # 展示改动给用户看
+cd frameworks/hcu-train-cookbook && git diff                              # 展示改动给用户看
 ```
 
 `--apply` 会先比较：同一个模型、同一套配置（nodes/gpus/并行参数/mbs/gbs/seq_len/精度等都相同）如果表格里已有真实数据行，只有本次 tgs（tgs 不可比时退回 tflops）比已有的好才会写入并替换旧行，不如已有结果就跳过（不复制日志、不改文档，记进问题表）；预览模式会提示 `[would skip]`。`all_experiments.csv` 不受这个影响，每次 `--apply` 都会追加一行作完整实验历史。

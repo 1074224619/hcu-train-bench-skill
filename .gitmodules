@@ -8,6 +8,6 @@
 [submodule "frameworks/cluster-manager-das"]
 	path = frameworks/cluster-manager-das
 	url = https://github.com/1074224619/cluster-manager-das.git
-[submodule "frameworks/dcu-train-cookbook"]
-	path = frameworks/dcu-train-cookbook
-	url = http://42.228.13.241:10068/dcutoolkit/deeplearing/dcu-train-cookbook.git
+[submodule "frameworks/ms-swift"]
+	path = frameworks/ms-swift
+	url = https://github.com/1074224619/ms-swift-das.git

@@ -1,12 +1,12 @@
 ---
 name: hcu-bench
-description: HCU 训练性能测试总流程（主 skill）。串起节点准备 → 测试计划 → 跑模型 → 解析并写入 dcu-train-cookbook 四个子 skill，管理共享配置 site.json 和中文运行日志。
+description: HCU 训练性能测试总流程（主 skill）。串起节点准备 → 测试计划 → 跑模型 → 解析并写入 hcu-train-cookbook 四个子 skill，管理共享配置 site.json 和中文运行日志。
 when_to_use: 用户要从头跑一轮框架/模型性能测试、问整体流程或进度、不确定该用哪个子 skill 时使用；具体某一步直接看对应子目录的 SKILL.md。
 ---
 
 # hcu-bench（主 skill）
 
-测试 Megatron-LM-das / Megatron-bridge-das / ms-swift 在 HCU 上的训练性能，结果写入 dcu-train-cookbook。本文件只讲流程、分工和共享约定；每一步怎么做看子目录。
+测试 Megatron-LM-das / Megatron-bridge-das / ms-swift 在 HCU 上的训练性能，结果写入 hcu-train-cookbook。本文件只讲流程、分工和共享约定；每一步怎么做看子目录。
 
 ## 子 skill
 
@@ -23,7 +23,7 @@ when_to_use: 用户要从头跑一轮框架/模型性能测试、问整体流程
 
 ```
 BenchAgent/
-├── frameworks/          三个框架 + cluster-manager-das（hcu-envcheck）+ dcu-train-cookbook
+├── frameworks/          三个框架 + cluster-manager-das（hcu-envcheck）+ hcu-train-cookbook
 ├── runs/                运行数据（site.json、节点列表、bench_log.md、每次测试的 <run_id>/、hcu-run-model 单模型调试输出）
 └── skills/
     ├── SKILL.md         本文件

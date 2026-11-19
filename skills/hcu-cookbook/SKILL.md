@@ -1,7 +1,7 @@
 ---
 name: hcu-cookbook
-description: 从训练日志解析 tflops / time per iter / tgs，按 dcu-train-cookbook 的格式写入性能表、日志和 all_experiments.csv。
-when_to_use: 跑完测试要汇总性能、重新解析已有日志，或把结果写进 dcu-train-cookbook 时使用。
+description: 从训练日志解析 tflops / time per iter / tgs，按 hcu-train-cookbook 的格式写入性能表、日志和 all_experiments.csv。
+when_to_use: 跑完测试要汇总性能、重新解析已有日志，或把结果写进 hcu-train-cookbook 时使用。
 ---
 
 # hcu-cookbook（步骤 4）
@@ -32,7 +32,7 @@ python3 $K/scripts/export_cookbook.py $R/<run_id> --apply      # 写入 cookbook
 
 `--apply` 会：
 - 先比较：同一个模型、同一套配置（nodes/gpus/并行参数/mbs/gbs/seq_len/精度等都相同）如果表格里已有非占位的真实数据行，只有本次 tgs（tgs 不可比时退回比 tflops）比已有的好才会写入，并替换掉旧行；不如已有结果就跳过（该用例记入问题表，不复制日志、不改文档，避免覆盖更好的历史结果）。预览模式下也会提示 `[would skip]`，方便 `--apply` 前先看一眼会不会被跳过；
-- 真正要写入的：日志按 cookbook 命名（`<模型>-dcu<卡数>-b<gbs>-s<seq>-tp..pp..ep..cp..-<lm|bridge|swift>.log`）复制到 `docs/perf-benchmarks/results/<megatron|ms-swift>/<平台>/logs/`；
+- 真正要写入的：日志按 cookbook 命名（`<模型>-hcu<卡数>-b<gbs>-s<seq>-tp..pp..ep..cp..-<lm|bridge|swift>.log`）复制到 `docs/perf-benchmarks/results/<megatron|ms-swift>/<平台>/logs/`；
 - 在模型文档第一张表里：优先填充同名空占位行（保留 modelscope 链接），否则（没有同配置的已有行可比较/替换时）插在该模型已有行之后，再否则追加到表尾；
 - `all_experiments.csv` 不受"只留更好结果"影响，每次 `--apply` 的用例都会追加一行，作为完整的实验历史记录（哪怕这次结果没写进表格）。
 
@@ -42,7 +42,7 @@ python3 $K/scripts/export_cookbook.py $R/<run_id> --apply      # 写入 cookbook
 
 ```bash
 X="python3 skills/common/benchlog.py exec --site $R/site.json --run-dir $R/<run_id>"
-C="cd frameworks/dcu-train-cookbook &&"
+C="cd frameworks/hcu-train-cookbook &&"
 $X --target "cookbook git diff" --plan "汇总改动给用户看，不做提交" -- "$C git diff --stat && git diff"
 ```
 
